@@ -1,0 +1,18 @@
+#+title: Modules
+* Modules
+They have the .cpp extension.
+Two things are needed at the beginning of a module
+- a /Module declaration/: this describes what is in teh module
+- what the file has to /export/, i.e. what will be visible when the file is imported somewhere else.
+  This is done by adding the word *export*
+
+  #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+export module employee;
+
+export struct Employee {
+  char firstInitial;
+  char lastInitial;
+  int employeeNumber;
+  int salary;
+};
+#+END_SRC

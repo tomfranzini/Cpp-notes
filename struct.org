@@ -1,0 +1,43 @@
+#+title: Struct
+* Structs
+The idea is to put together difefrent types into a single type. It is very similar to the class object.
+This is the module where the struct is defined (see [[file:modules.org][modules]]).
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+export module employee;
+
+export struct Employee {
+  char firstInitial;
+  char lastInitial;
+  int employeeNumber;
+  int salary;
+};
+#+END_SRC
+
+In the code I can then define a variable called "anEmployee" of type "Employee".
+This will carry all infos that I put in teh struct
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+import employee; //This imports the module
+using namespace std;
+
+int main()
+{
+// Create and populate an employee.
+//This variable contains infos about all attributes to the type: firstInitial,lastInitial,emplyeeN,salary
+Employee anEmployee;
+
+//Note the . operator to access the fields of the struct
+anEmployee.firstInitial = 'J';
+anEmployee.lastInitial = 'D';
+anEmployee.employeeNumber = 42;
+anEmployee.salary = 80000;
+
+
+// Output the values of an employee.
+println("Employee: {}{}", anEmployee.firstInitial,
+anEmployee.lastInitial);
+println("Number: {}", anEmployee.employeeNumber);
+println("Salary: ${}", anEmployee.salary);
+}
+#+END_SRC

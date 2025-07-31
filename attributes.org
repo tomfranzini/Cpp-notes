@@ -1,0 +1,148 @@
+#+title: Attributes
+* Attributes
+They are used to add information in the source code. They have a standard syntax: /[​[attribute]]/.
+Here are some of them
+**** [​[fallthrough]]
+prevent compiler to warn against switch cases with no breaks;
+
+**** [​[nodiscard]]
+This is used in functions that return a value. If that value is _not_ used by the calling function, the compiler will issue a warning
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+[[nodiscard]] int func() { return 42; }
+
+int main()
+{
+func();
+}
+#+END_SRC
+
+#+RESULTS: warning: ignoring return value of function declared with 'nodiscard' attribute [-Wunused-result]
+   15 | func();
+      | ^~~~
+1 warning generated.
+
+This becomes useful for functions that return error codes. This means that if the attribute is present, the error code _cannot be ignored_.
+
+It can also be used in class, structs and enums.
+
+It is possible to add a string to the attribute, which in principle serves as explanation for the issued warning
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+[[nodiscard("Some explanation")]] int func();
+#+END_SRC
+
+**** [​[maybe_unused]]
+Sometimes, when a function is called with some parameters and they are not used by the compiler, a warning will be issued. To avoid this, one can add the attribute.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int func(int param1, [[maybe_unused]] int param2)
+{
+return 42;
+}
+#+END_SRC
+
+This also can be used in classes, structs, unions, typedef, ...
+
+**** [​[noreturn]]
+See for example this code:
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+//This function just exit the execution if some conditions are met
+[[noreturn]] void forceProgramTermination(){
+  exit(1); // Defined in <cstdlib>
+}
+
+
+bool isDongleAvailable(){
+  bool isAvailable { false };
+  // Check whether a licensing dongle is available...
+  return isAvailable;
+}
+
+
+bool isFeatureLicensed(int featureId){
+  if (!isDongleAvailable()) {
+    // No licensing dongle found, abort program execution!
+    forceProgramTermination();
+  } else {
+    // Dongle available, perform license check of the given feature...
+    bool isLicensed { featureId == 42 };
+    return isLicensed;
+}}
+
+int main(){
+  bool isLicensed { isFeatureLicensed(42) };
+  println("{}", isLicensed);
+}
+#+END_SRC
+
+#+RESULTS:warning: non-void function does not return a value in all control paths [-Wreturn-type]
+
+In the previous example, the function /forceProgramTermination/ is called, which exits the code. For this reason, the function does not return anything to /idFeatureLicensed/, which also returns nothing, but it is of non-void type and tehrefore the warning appears.
+
+Adding the attribute will solve the issue
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+[[noreturn]] void forceProgramTermination(){
+  exit(1); // Defined in <cstdlib>
+}
+#+END_SRC
+
+****  [​[deprecated]]
+This is used to flag something which is not up-to-date or old. You can also add a strign as a message or explanation.
+The compiler will issue a warning if used
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+[[deprecated("Unsafe to use. Use the new function funx")]] void func ();
+#+END_SRC
+
+****  [​[likely]] and  [​[unlikely]]
+Used to help the compiler to optimize the compilation process.
+It can be used if if/switch statements
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+if (a > 10) [[unlikely]] {
+  //do something
+ } else {
+ //something else
+ };
+
+
+switch (value) {
+ case value: break;
+ }
+ (value){
+  [[likely]] case 1:
+    // Do something ...
+    break;
+   case 2:
+     // Do something ...
+     break;
+   [[unlikely]] case 12:
+     // Do something ...
+     break;
+}
+#+END_SRC
+
+****  [​[assume]]
+This is a new feature of c++23.
+It is used to optimise the code. For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int divideBy32(int x)
+{
+  return x / 32;
+}
+#+END_SRC
+
+Here the compiler has to produce the code to make sure the division works for positive and negative numebrs.
+If I know that the argument that is passed is *always* positive, I can help the compiler
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int divideBy32(int x)
+{
+  [[assume (x>=0) ]];
+  return x / 32;
+}
+#+END_SRC

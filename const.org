@@ -1,0 +1,112 @@
+#+title: Const
+* The /const/ qualifier
+The word /const/ stands for constant and whatever is specified as such remains unchanged.
+Any attempt to change it is marked as an error by the compiler.
+There are many different uses.
+** qualifier for a type
+It can be used to define actual _constants_ in the program. This is equivalent to teh old C #define
+When the qualifier const is placed the compiler will ensure that teh value is never changed
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const int num1 {3};
+const std::string aName {"John"};
+const double PI {3.14159265};
+#+END_SRC
+
+Any variable can be made contant, even class data members.
+
+** /const/ and pointers
+Two things can be done
+1. create a pointer that points to _constant values_, i.e. the values that are pointed do not change
+   In the first case for example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const int* ptr ;
+ip = new int[10];
+ip[4]=5; //gives error, because the pointer points to const int and therefore cannot be changed
+#+END_SRC
+
+2. create a _constant pointer_, i.e. a static array. By logic, it has to be initialised at declaration.
+   It is done like this
+   #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int* const ptr ;
+ip = new int[10]; //This does not compile because the pointer itself cannot be changed
+
+int* const useful_ptr {new int[10]}; //immediate initialization
+int useful_ptr[4] = 5;
+   #+END_SRC
+
+These two qualifications can happen simultaneously
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const int* const ptr {nullptr}; //This is a constant pointer to contant ints
+
+//This is also valid and it is the same
+int const* const ptr {nullptr};
+#+END_SRC
+
+The rule to remember is to _read from right to left_
+- /const int * ptr;/ : pointer to constant integers
+- int* const ptr; : constant pointer to integers (same as array of integers)
+
+** /const/ to protect parameters
+in c++ a non-const variable can be made into a const one when it is passed as a parameter to a function.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+
+//voind function that takes in a reference to a point in memory and assign to it teh qualification of const
+void mysteryFunction(const string* someString){
+//Now I try to modify the content of the pointer which IS NOT ALLOWED since the argument is passed with const
+//*someString = "Test";
+
+//I need to create a temporary variable
+string tmp = *someString;
+tmp = "Test"; // Will not compile
+}
+
+
+int main(){
+//Define a string
+string myString { "The string" };
+
+//Passing the address of the string to the function
+mysteryFunction(&myString);
+}
+#+END_SRC
+
+
+In general if an argument of a function is passed as /const/, the body of the function will not be able to modify it.
+
+** /const/ member functions
+The qualifyier can be used in member funciton declaration (and its definition), to say that the function is _not allaowed to modify the class members_ if it tries, an error will occur.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+export class AirlineTicket{
+public:
+  AirlineTicket();
+  ~AirlineTicket();
+
+  double calculatePrice() const;
+
+  std::string getPassengerName() const;
+  void setPassengerName(std::string name);
+
+  int getNumberMiles() const;
+  void setNumebrMiles(int miles);
+
+  bool hasEliteStatus() const;
+  void setEliteStatus(bool status);
+
+private:
+  //all class members are private
+  std::string m_passengerName;
+  int m_numberMiles;
+  bool m_hasEliteStatus;
+}
+
+  /..../
+
+
+//Definition with repetition of const
+std::string AirlineTicket::getPassengerName() const {
+return m_passengerName;
+}
+
+#+END_SRC

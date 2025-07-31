@@ -1,0 +1,109 @@
+#+TITLE: General stuff on emacs, doom and org-mode
+#+AUTHOR: Tommaso Franzini
+#+DESCRIPTION: Some notes in c++
+
+* New Headline
+** Level 2
+*** Level 3
+**** Level 4
+***** Level 5
+
+
+* DOOM emacs features
+In principle DOOM uses vim keybinding. To toggle it press ESC and then use vim commands.
+Some commands
+- SPC-m-i makes line a new item of list
+- SPC-0 : beginning of line
+- SPC-i : goes back to insert mode
+- ESC - h/j/k/l will go left right up down
+
+** Copy/paste in DOOM
+- To copy press ESC and then enter visual mode in 3 ways
+  1. ESC-v : toggle selection character by character
+  2. ESC-V : toggle line selection
+  3. ESC-Ctrl-v : block selection
+- Then y to yank the selection.
+- Then p to paste after the cursor (P to paste before)
+
+* org-mode stuff
+- SPC-m-h : makes line as a new heading
+
+- To make a list I can just put a + or - at the beginning of new line
+  Or more easily just press ctrl+enter will add a new item *at the same depth*
+  + new element
+    + pressing enter you insert a new sub item
+  + One can also make ordered lists
+    1. like this
+    2. and so on..
+
+- If I press ESC+tab I can fold/unfold a section. shift+tab will do for the entire document.
+
+- If I want to promote a heading/element of list to a new level META-h and for demoting META-l
+
+- Also I can mode whole section, by using META-j and META-k. This will move *all subtrees*.
+  To keep subtrees where they are META-shift-j/k.
+
+** Insert snippet
+SPC-i-s is the command to insert a snippet
+- time: Wed Jul 30 13:14:33 2025
+
+To create a new snippet:
+        - M-x yas-new-snippet
+        - Write teh snippet and save it in the mode you want to use it. If it is a general snippet, save in fundamental mode
+
+** Todo notes
+If I write TODO at the beginning of  anew line I create a TODO element.
+This can be toggled and changed by ESC-SPC-m-t
+
+*** TODO : this is an example
+*** [?] : this new line comes for free just by pressing Ctrl+Enter
+
+** Scheduling
+SCHEDULED: <2025-07-31 Thu 16:00>
+I can insert a schedule in org-mode. This can be opened META-SPC-m-d-s.
+*** TODO : I'm still not totally sure how to set different date and time for a new schedule element.
+
+** Checkbox
+One need to put "- + [ SPACE ]" and I can wite [ / ] to insert the counter ->[1/3] or percentage [ % ] -> [33%]
+- [ ] Eggs
+- [ ] stuff
+- [X] Flour
+And then I can cross it with C-c C-c or also ESC-RET
+
+** org-Agenda
+To open : SPC-o-A
+To move the following file to the front of agenda: C-c-[
+
+** Tables
+Typing A | stuff | ...
+To add title separator ESC SPC m b -
+
+| ONE      | TWO            | THREE | FOUR |
+|----------+----------------+-------+------|
+| new text |                |       |      |
+|          |                |       |      |
+| new text |                |       |      |
+|          |                |       |      |
+| test     | tab to go here |       |      |
+
+Row can be moved with META j/k
+Column can be moved with META l/h
+
+META shift j/k -> adds/remove a line
+META shift l/h -> adss/remove a column
+
+** Code lines
+To write some code lines press C-c C-, + s and then pick the coding language
+I added a snippet <c++ and then tab
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+int main() {
+    println("Hello World!");
+}
+#+END_SRC
+
+#+RESULTS:
+: Hello World!

@@ -1,0 +1,102 @@
+#+title: Pointers
+* (Legacy) pointers
+*** TODO : add implementation from C++ commedia
+
+** How the memory works memory
+In C++ is divided in two parts
+1. the _stack_ : if a function A is executed, a new layer is added on top of the stack. On this layer, variables defined inside the scope of the function are stored. If the function A calls another function B then another layer is added and any parameter that is passed from A to B is copied on the new layer. Once teh execution of the function ends, the layer gets *destroyed* and every variable that was stored there gets eliminated and the memory is freed.
+2. the _free store_ : this is an area of the memory that has no shape. It is a piel of bits that can be modified by adding more bits or removing them. Here memory _must be deallocated_ because it does not happen automatically.
+
+
+** Define a pointer
+*** Pointing the free store
+If you want to put something in the free store, you need to allocate the memory for that, and this is done via a (old fashoned) pointer,
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//Define  a pointer to int
+int* myptr;
+#+END_SRC
+
+The pointer must be thought of as an arrow _pointing_ to a certain location in the memory, which for now is empty (nothing has been put there yet). It is good practive to _always allocate and initialize a pointer_. For this reason one has to initialize a pointer _on definition line_.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//Initialize teh pointer to a null pointer, because I don't want to allocate yet.
+int* myptr {nullptr};
+#+END_SRC
+
+The nullptr is the null pointer, meaning that it points to anything. It has a convetional boolean value of false.
+
+
+To allocate new memory for the integer pointer, I can do it like this
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+myptr = new int;
+#+END_SRC
+
+Now the pointer is pointing to a place in the memory that has precicely an int-size.
+To access this memory location one can use the _dereference operator_ and therefore one can do
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//What this is doing is changing the memory that is pointed by myptr
+*myptr = 5;
+#+END_SRC
+This can only be done once the memory has been allocated. _There is no dereferencing to a nullptr!_
+
+
+Once the ptr has been used, one can deallocate the memory
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//The delete operator deletes the memory
+delete myptr;
+
+//It is good to reassign the value to nullptr
+myptr = nullptr;
+#+END_SRC
+
+*** Pointing the stack
+A pointer can also point to a variable in the stack.
+To do this, one has to initialise teh pointer with the _address in memory_ of a variable, which is done using the address operator &
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//Define a variable stored in the stack
+int i {8};
+
+//Define a pointer pointing at that variable
+int* myptr {&i};
+#+END_SRC
+
+*** Pointers and classes
+There is a particular syntax to deal with pointers to classes.
+You first have to access the pointed value using the dereference operator * and tehn use the stadard . operator
+This is done in a quicker way by using the -> operator
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+
+//Define the Employee class
+//it needs initials, ID, salary to be initialised
+
+//I initialize a pointer to Emolyee type called anEmployee and I initialise it
+Employee* anEmployee {new Employee {'J','D',42,8000}};
+
+//Now I want to access the salary
+println("The salary is {}", (*anEmployee).salary);
+
+//In a quicker way
+println("The salary is {}",anEmployee->salary);
+
+//this can be used to check that something is valid
+bool isValidSalary { anEmployee && anEmployee->salary > 0 };
+
+
+delete anEmployee; anEmployee = nullptr;
+#+END_SRC
+
+*** Dynamically allocated arrays
+Pointers can be also used to dynamically allocate arrays (which naturally are static).
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int arraySize = 5;
+
+//This allocates the memory for 5 ints
+int* myptr = new int[arraySize];
+
+//Now this can be used as an array
+myptr[0] = 4;
+
+
+//Finally I can deallocate
+//note the brackets after delete
+delete[] myptr; myptr=nullptr;
+#+END_SRC

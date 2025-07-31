@@ -1,0 +1,97 @@
+#+title: References
+* References
+A reference is an alias for another variable.
+If I change the reference, the original value is also changed.
+They essentially are pointers to the initial variable and they can be thought of as another name for the initial variable.
+Reference is obtained by attaching "&" to the type of the variable.
+
+** Reference variables
+They _must_ be initialised when defined
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int x {3};
+
+int& xRef {x}; //creates a reference to x
+
+int& invalid_Ref; //must be initialized when created!
+#+END_SRC
+
+Once defined _a reference cannot be changed_ meaning that it cannot be the alias for a new variable. For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int x { 3 }, y { 4 };
+int& xRef { x }; //xRef refers to x
+
+xRef = y; // Changes value of x to 4. Doesn't make xRef refer to y!
+#+END_SRC
+
+This can also be tested
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int x { 3 }, z { 5 };
+int& xRef { x };
+int& zRef { z };
+
+zRef = xRef; // Assigns values, not references
+//zRef still refers to z and I am simply changing teh value to 3
+#+END_SRC
+*** References to const
+references are const by default because you cannot change what they are referring to.
+a pointer can point to a pointer (**x) but _there is no reference to a refenrece_ (in this case you might wanto to make a reference to a pointer).
+
+A reference to const is something like this
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int z;
+const int& zRef { z }; // I create a reference to z and I declare that it is constant
+zRef = 4; // DOES NOT COMPILE
+
+//However, z IS NOT CONST!! This means that I can still change it.
+#+END_SRC
+
+Since the number cannot be changed (5 is always 5),
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int& unnamedRef1 { 5 }; // Does not work because unnamedRef1 coulb be in principle changed, but 5 can't!
+
+const int& unnamedRef2 { 5 }; // Works as expected becasue of the const qualifier
+#+END_SRC
+
+Also, it is not possible to create a reference to a temporary object (for example the return of a function) unless it is marked as const:
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+string getString() {return "Hello world!";}
+
+string& string1 { getString() }; // DOES NOT COMPILE
+const string& string2 { getString() }; // Works as expected
+#+END_SRC
+
+*** Reference to pointers
+It is possible to create references to pointers too
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int* myptr {nullptr}; //Define a pointer
+
+int*& ptrRef {myptr}; //Define a reference to the pointer
+
+ptrRef = new int; //I allocate memory for the pointer WHICH IS ALSO myptr
+
+*ptrRef = 5; //I give some value
+
+delete ptrRef; ptrRef=nullptr; //Deallocate
+#+END_SRC
+
+
+I can pass the address of a reference to a pointer, so that the pointer is basically pointing to teh initial variable.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int x {4};
+
+int& xRef {x};
+
+int* ptr {&xRef}; //The pointer is pointing at the memory allocated for xRef which is an alias for the same memory of x
+
+*ptr = 100; //I am basically assigning 100 to x
+#+END_SRC
+
+Careful when comparing xRef (refeence to int) and ptr (pointer to int):
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ptr == xref; //WRONG
+
+ptr == &xRef; //Works, I am comparing the address
+ptr == &x; //Also works
+#+END_SRC
+
+_A pointer to a reference is not allowed_! This means that /int&* test;/ is not allowed.

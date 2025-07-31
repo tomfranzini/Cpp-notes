@@ -1,0 +1,142 @@
+#+title: Classes
+* Classes
+Usually it is good practive to put class declared in a module .cppm file, while the definitions are in a different file.
+
+** Definition
+It is defined in the following way
+1. Declare class name
+2. Inside {} : this is where _data members_ (properties of the object) and _member functions_ (things the object can do) are.
+   Each data member and function can have different access level
+   - public : elements of this type can be accessed from outside the class (in the main for example)
+   - private : things that can be accessed by the calss only
+   - protected : elements of this type can be /inherited/ by sub-classes
+
+An important practice is that all methods and functions are _private_, and one implements functions like getters and setters (public/private) to access them.
+
+This is an example of a class, written in a module file so _without the implementations of the functions_
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+export module airline_tickets;
+import std;
+
+export class AirlineTicket{
+public:
+  //Member function with SAME NAME AS THE CLASS is the constructor. This is called when an object is createdness
+  AirlineTicket();
+
+  //Destructor it is automatically called when object is destroyed
+  ~AirlineTicket();
+
+  //A public function used to compute the price
+  double calculatePrice();
+
+  //getters and setters
+  std::string getPassengerName();
+  void setPassengerName(std::string name);
+
+  int getNumberMiles();
+  void setNumebrMiles(int miles);
+
+  bool hasEliteStatus();
+  void setEliteStatus(bool status);
+
+private:
+  //all class members are private
+  std::string m_passengerName;
+  int m_numberMiles;
+  bool m_hasEliteStatus;
+}
+#+END_SRC
+
+Note
+- each class member has the prefix /m_/, and they are all private
+- getters and setters are public
+
+** Implementation
+Now we implement the functions in .cpp module implementation file. This can also be done in the definition module, but this is good practice.
+
+*** Initialization of data members
+There are two ways
+1. using constructor initializer : simply put a colon ":" after the construction header
+2. initialization in the body of the constructor
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+module airline_tickets
+
+//CONSTRUCTOR INITIALIZER
+AirlineTicket::AirlineTicket ()
+: m_passengerName {"Unknown Passenger"}
+, m_numberMiles {0}
+, m_hasEliteStatus {false} {}
+
+//INITIALIZATION IN BODY
+AirlineTicket::AirlineTicket (){
+  m_passengerName = "Unknown Passenger";
+  m_numberMiles = 0;
+  m_hasEliteStatus = false;
+}
+#+END_SRC
+
+In principle in the constructor one could add more actions like allocating memory, opening files,...
+If the constructor only initializes the member (and nothing else), then it can be done _directly in teh class_. So the example above would read:
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+private:
+  //all class members are private
+  std::string m_passengerName {"Unknown Passenger"};
+  int m_numberMiles {0};
+  bool m_hasEliteStatus {false};
+}
+#+END_SRC
+
+A destructor that does nothing is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+AirlineTicket::~AirlineTicket(){}
+#+END_SRC
+
+*** Initialization of function members
+For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+double AirlineTicket::calculatePrice(){
+  if (hasEliteStatus()) return 0; //Elite costumers fly for free
+  return getNumberMiles()*0.1;
+}
+#+END_SRC
+
+**** Initialization of getters and setters
+***** getters
+They are needed to return a specific member value
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+string AirlineTicket::getPassengerName() { return m_passengerName; }
+int AirlineTicket::getNumberMiles() { return m_numberOfMiles; }
+bool AirlineTicket::hasEliteStatus() { return m_hasEliteSuperRewardsStatus;}
+#+END_SRC
+
+***** setters
+They are needed to _set_ the value of the member and they don't need to return anything.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void AirlineTicket::setPassengerName(string name) { m_passengerName = name; }
+void AirlineTicket::setNumberMiles(int miles) { m_numberMiles = miles; }
+void AirlineTicket::setHasEliteStatus(bool status){m_hasEliteStatus = status;}
+#+END_SRC
+
+
+** Using classes
+If I defined the class in an external file airline_ticket.cppm I need to include it
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+import airline_ticket
+#+END_SRC
+
+and then I can start defining new types
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//definition of the variable of type AirlineTicket
+AirlineTicket myTicket;
+
+//Initialization for the members
+myTicket.setPassengerName("Tim Cook");
+myTicket.setNumberMiles(700);
+
+//Compute cost
+double price {myTicket.calculatePrice()};
+
+println("The ticket price is {}", price);
+#+END_SRC

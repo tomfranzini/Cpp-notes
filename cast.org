@@ -1,0 +1,25 @@
+#+title: Cast
+* Cast
+** /const_cast()/ and /as_const()/
+It adds "const" to a variable that is not const.
+This might be used when you have a function that takes a const parameter and then calls a function that uses that same parameter as non const or vice-versa.
+For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+
+//Takes ina normal pointer to char
+void thirdPartyLibraryFunction(char* str);
+
+//Takes in a pointer to CONST char
+void f(const char* str){
+
+//When I call the 3rd party function, I need to recast to constant type in order to use the funciton correcly. In this case it will REMOVE the const attribute
+thirdPartyLibraryFunction(const_cast<char*>(str));
+}
+#+END_SRC
+
+In a more compact way, one could use as_const()
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+string str { "C++" };
+
+const string& constStr { as_const(str) };//equivalent to const_cast<string>(str)
+#+END_SRC

@@ -1,0 +1,90 @@
+#+title: Enum
+* Enum
+
+Enums are user-defined types that allow to define a list of elements.
+They are used to avoid explicit integer representations fo variables.
+
+** Strongly typed enums
+It defines a range of values for some variable. The possible values are called enumerators.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+//Definition of the enum class. IT MUST END WITH SEMICOLON
+enum class PieceType {King, Queen, Rook, Pawn};
+
+int main(){
+
+// Now I can introduce a new object of that type
+//Note that I need  frto use the scope resolution operator to tell the code where to pick the name King
+  PieceType my_piece {PieceType::King};
+}
+#+END_SRC
+
+
+In the enum class, every element has an underlying int value.
+If not specified, it is 0,1,2,...
+Otherwise I have to tell
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main#include <print>
+enum class PieceType {King=2, Queen, Rook=6, Pawn};
+#+END_SRC
+
+and in this case, Queen has value 3 wile Pawn has value 7.
+
+Remember that the elements are not automatically casted to ints.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int underlying_value {my_piece}; //this is an error
+
+int underlying value {std::to_underlying(my_piece)}; //this works
+#+END_SRC
+
+Different enum classes can contain *the same element*. For this reason, one has to use the scope resolution operator to clarify where is the definition coming from. Otherwise one has to explicitly say teh namespace:
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+enum class PieceType {King, Queen, Rook, Pawn};
+
+int main(){
+  using enum PieceType;
+  PieceType my_piece {King};
+}
+#+END_SRC
+
+** Old-style enums
+They are defined as follows
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+//Definition of the enum. THERE IS NO "CLASS" WORD
+enum PieceType {King, Queen, Rook, Pawn};
+
+int main(){
+
+// There is no need for scope resolution. This however is a problem if King gets defined in other parts of the code
+  PieceType my_piece {King};
+}
+#+END_SRC
+
+See the following example
+
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+
+enum Status {error, ok};
+bool ok {false};
+
+
+int main(){
+}
+#+END_SRC
+
+
+Gives the following error output:
+#+RESULTS:/var/folders/c1/18q68bvd1834y2cyt7m0b7y00000gn/T/babel-y3f6f5/C-src-bFy3My.cpp:12:6: error: redefinition of 'ok' as different kind of symbol

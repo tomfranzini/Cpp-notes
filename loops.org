@@ -1,0 +1,63 @@
+#+title: Loops
+* Loops
+** while
+The syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int i {0};
+
+while (i < 5){
+  println("Nothing useful");
+  i++;
+ }
+#+END_SRC
+
+Note that /i<5/ is evauated _before_ entering the loop. This means that if teh expression is false, nothing in the loop is read and the code continues from the end of teh scope of while.
+
+- /break/ can be used to exit the loop. The execution continues right after the loop.
+- /continue/ can be used to go back to the beginning of the loop
+
+** do/while
+The syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int i {100};
+
+do{
+  //things to be done
+  i++;
+ } while (i < 5);
+#+END_SRC
+
+The difference here is that the copiler _always read the scope of do at least once_ and *at the end* evaluates if doing it again. This means that in the code above the stuff in the do scope is done exactly once.
+
+** for
+Syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+for (int i {0} ;  i < 5 ; i++ ) {
+  //something to be executed
+ }
+#+END_SRC
+where the first entry is an initialisation of a variable that is visible _only_ inside the scope of teh for loop, the second is the condition that has to be met in order to enter the loop. The third element is executed _at the end_ of every iteration.
+Note that either of these three _can be omitted_.
+
+** range for
+It allows to itereate over "containers" such as arrays, vectors, std::array, initialiser lists and more.
+The syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+for (element1 : element2){
+  //stuff
+ }
+#+END_SRC
+
+where element2 can be any container (arrays,...) and element1 is a declared variable whose visibility is constrained to the scope of the loop. It can also be a _reference_ compatible with element2.
+
+The loop runs exactly N times, where N is the size of element2. For each iteration element1 takes as value the corresponding value contained in element2, _creating a copy_. If instead it is a reference, it will reference the content itself _without making copies_.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+array arr { 1, 2, 3, 4 };
+for (int i : arr) { println("{}", i); }
+#+END_SRC
+
+It is possible to add an initialiser, e.g.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+for (array arr { 1, 2, 3, 4 }; int i : arr) { println("{}", i); }
+#+END_SRC

@@ -1,0 +1,86 @@
+#+title: Functions
+* Functions
+** Declaration and definition
+
+The /declaration/ of a function is called a *function prototype* or *header* and they only serve to tell how to access the function and NOT what it contains.
+
+An example of declaration is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void myfunc (int i, char c);
+#+END_SRC
+This is a function that returns nothing (it is of tyoe void), and takes as arguments an int and a char.
+
+This only /declares/ teh functions, but it does not /define/ the function. If no definition is given, when the linker acts, it will give error because whenever the function is called _tehre is nothing to be called_.
+
+This is a possible definition
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void myfunc (int i, char c)
+{
+  println("The value of i is {}.", i);
+  println("The value of c is {}.", c);
+}
+#+END_SRC
+It will just print the values of the given arguments.
+
+When teh function is not of void type, it will return a value of the given type.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int add(int number1, int number2)
+{
+  return number1 + number2;
+}
+#+END_SRC
+
+In principle, one can give the /auto/ type to the function and the compiler will understand the type to return automatically.
+
+**** Return
+- A function can have several return statements, but the type has to agree.
+- A function can return a _call to itself_! In this case the *first* return must be non-recursive
+***** TODO : add an example of this recursive calling
+
+**** Function name access
+Any function has a predefined variable, that contains its own name
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int add(int number1, int number2)
+{
+println("Entering function {}", __func__);
+return number1 + number2;
+}
+#+END_SRC
+
+** Function overloading
+This is one of the crucial features of c++. It allows to define several different functions with *the same name* but different arguments.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int addNumbers(int a, int b) { return a + b; }
+double addNumbers(double a, double b) { return a + b; }
+#+END_SRC
+Here the function is defined twice with different types of aguments and the compiler will /resolve/ automatically which one to use depending on the aguments the function is called with.
+
+** Initializer lists
+If you want to define a function that accepts a variable number of arguments, one can use /std::initializer_list/ class templace. You only have to specify the type.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+int sum (initializer_list<int> values){
+  int total {0};
+  for (auto & k : values) total += k;
+  return total;
+}
+
+int main() {
+
+//The list of arguments to be passed as initializer list is in {...} brackets
+  int a = sum({1,1,1,1});
+  int b = sum({1,2,3});
+
+  println("a is {}",a);
+  println("b is {}",b);
+}
+#+END_SRC
+
+#+RESULTS:
+: a is 4
+: b is 6
+
+Note that the initializer list is *type specific*, so if something not int is passed, it will give error!

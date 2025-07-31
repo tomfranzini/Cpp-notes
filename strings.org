@@ -1,0 +1,5 @@
+#+title: Strings
+* Strings
+There are two ways to work with them
+1. C style : strings as arrays of characters
+2. C++ style : uses /std::string/ which is safer

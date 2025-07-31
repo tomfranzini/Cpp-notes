@@ -1,0 +1,235 @@
+#+title: Arrays
+* Arrays
+** Old-fashioned (C) arrays
+These are C objects. In c++ it is better to use /std::array/ and /vector/.
+The syntax is the following:
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int my_array[3];
+#+END_SRC
+
+There is the possibility to define *multi-dimensional arrays*
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int multi[2][2];
+#+END_SRC
+and the idea is to have something like
+| multi[0][0] | multi[0][1] |
+| multi[1][0] | multi[1][1] |
+
+
+*** Initialization
+The size has to be a _constant_ or a _constant expression_ (see [[file:constant_expressions.org][constexpr]]) and never a variable.
+The first position of the array is always 0, the last position in N-1.
+Therefore if I want to fill it:
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+my_arrat[0] = 5;
+my_array[1] = 3;
+my_array[2] = 0;
+#+END_SRC
+
+They can be initialised in-line
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int my_array[] {1,2,3};
+#+END_SRC
+
+Note that I can leave the [] empty only if I specify the content: the compiler can understand the size.
+
+Also this is possible
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int my_array[4] {2};
+#+END_SRC
+Which initialise only the first element and everything else will be zero.
+
+*** The size of an array
+**** std::size
+To get teh *size* of an array one can use std::size()
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+int main() {
+  int my_array[4] {2};
+
+  print("The size of the array is {}", size(my_array));
+}
+#+END_SRC
+
+#+RESULTS:
+: The size of the array is 4
+
+**** sizeof
+There is anotehr way to get the size, using /sizeof/ operator, which return the size _in bytes_. So for example,
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+int main() {
+  double my_array[4] {2};
+
+  print("The size of the array is {}", sizeof(my_array)/sizeof(my_array[0]));
+}
+#+END_SRC
+
+#+RESULTS:
+: The size of the array is 4
+
+** /std::array/
+They are the preferred way to define fixed-size arrays in c++. They are in the <array> /class template/ (see [[file:templates.org][templates]]).
+There are advantages
+- they know their own size
+- not automaically cast to pointers
+- have out-of-the-box iterators
+
+Bein a class template, you need to specify _class template parameters_: in this case it is the type and the number of elements you need to store. This is done as follows
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+array<int,3> my_array {1,2,3};
+
+//Size of the array is found via method
+println("Array size is {}", my_array.size());
+
+//Elements are accessed in the usual way
+println("The second element is {}", my_array[1]);
+#+END_SRC
+
+A nice feature is that c++ has *class template argument deduction* (CTAD) and thus I don't have to specify type and size,
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+array my_array {1,2,3};
+#+END_SRC
+
+As C-style array, these cannot grown in size in runtime: _arrays are always of fixed size_!
+
+** /std::vector/
+This is used to define _non_-fixed size arrays.
+A vector is dynamic, and will allocate the memory you need.
+You can _add_ and _remove_ elements from a vector (it is not static as arrays). This is done with
+- /push_back()/ : adds an element at the *end* of the vector
+The syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//As before, I need to specify the type but NOT the size
+vector<int> my_vector {1,2};
+
+//We now add 3 at the end
+my_vector.push_back(3);
+
+//Acces is done the usual way
+println("First element is {}", my_vector[0]);
+#+END_SRC
+
+A vector can contain basically anything, but _everything of the same type_.
+CTAD works here too, so /vector my_vector {1,2,3};/ also works.
+
+** /std::pair/
+This template is defined in <utility>.
+It is used to group together _two_ values of _possibly different types_.
+There are methods to access the two elements.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+pair<double,int> myPair {3.14 , 5};
+
+//Now we access the first
+println("The first element is {}",myPair.first());
+
+//Now we access the second
+println("The second element is {}",myPair.second());
+#+END_SRC
+
+CTAD works here too, so /pair myPair {'c',4};/ also works.
+
+** /std::optional/
+It is defined in <optional>. It manages an *optional* given value, meaning that the value may be there _or not_.
+For example, it can be used when a function fails. At any point of the code, an optional either contains something, or it contains nothing.
+
+To know if the optional contains something, one can use
+- /.has_value()/ : returns true or false
+- /.value() : returns the value (if any/). If the optional is empty, an exeption is thrown (warning).
+- /.value_or(x) : returns the value (if any). If empty, returns x.
+
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+
+//Example of a function returning an std::optional containing an int
+optional<int> getData(bool giveIt)
+{
+  if (giveIt) {
+    return 42;
+  }
+  return nullopt; // or simply return {};
+}
+
+int main(){
+
+optional<int> data1 { getData(true) };
+optional<int> data2 { getData(false) };
+
+//using has_value
+println("data1.has_value = {}", data1.has_value());
+
+//using if statement
+if (!data2) println("data2 has no value.");
+
+
+//access the value
+println("data1.value = {}", data1.value());
+
+//the dereferencing operator can also be used
+ println("data1.value = {}", *data1);
+
+//access when empty using value_or
+println("data1.value = {}", data2.value_or(0));
+}
+#+END_SRC
+
+#+RESULTS:
+: data1.has_value = true
+: data2 has no value.
+: data1.value = 42
+: data1.value = 42
+: data1.value = 0
+
+* Structured Bindings
+Imagine you have an array of N values and you want to define N variables and assigning to them those values, one by one.
+
+This can be done in a fast way
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+array values {1,2,3};
+
+//Definition as structures binding
+//Note that auto is MANDATORY, no other type can be used
+auto [x,y,z] {values};
+#+END_SRC
+
+Clearly the numebr of elements in the square brackets has to match that in the array.
+
+They also work with structs
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+
+//Define a struct that has 3 attributes
+struct  point {
+  double m_x, m_y, m_z
+};
+
+point P ;
+
+//I initialize the values
+P.m_x = 1.0;
+P.m_y = 5.0;
+P.m_z = 3.0;
+
+//Now I define new variables and assign those values
+auto [x,y,z] { P };
+
+#+END_SRC
+
+This syntax can also be used to separate a std::pair
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+pair my_pair {'x',5};
+
+//Define the two new variables and assing via structured binding
+auto [the_string,the_int] {my_pair};
+println("First element is {}", the_string);
+
+
+#+END_SRC

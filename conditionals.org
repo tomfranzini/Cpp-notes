@@ -1,0 +1,130 @@
+#+title: Conditionals
+* Conditional Statements
+** /if/else/ statements
+The syntax is the following
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+if (boolean_variable) {
+  //something to be done if boolean_variable is true
+  } else if (boolean_variable_2) {
+    //something else to be done if boolean_var_2 is true
+  } else if (...) {
+  //...
+ } else {
+  //last thing that will be tried. and this one WILL be tried for sure
+ }
+
+#+END_SRC
+
+Here boolean_variable has to be an expression that has to be evaluated to something of bool type.
+Usually one has expression like "var1 > var2" and similar stuff.
+
+*ALL THAT IS NOT ZERO IS CONSIDERED TRUE*
+
+Remember also that else always attach to teh closest if. For example see this code:
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+
+int main() {
+
+int k[] {1,0,-1};
+
+for(int j : k){
+  cout <<"The number is";
+  if( j >= 0 ) if( j > 0 ) cout <<" positive";
+    else cout <<" negative";
+  cout <<'\n';
+ };
+
+ }
+#+END_SRC
+
+#+RESULTS:
+: The number is positive
+: The number is negative
+: The number is
+
+Which clearly has something wrong in it. The reason is that when k=0, it goes throught the first if, then is blocked by the second if (0 is not >0) and tehrefore is "catched" by the closest else. For k=-1, teh first if is not passed, but this will also *exclude the else* because it is tied to the second if, which in this case is never reached.
+
+*** Initialisers for if statements
+It is possible to include an [[file:initializer.org][initializer]] when doing an if statement
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+if (<initialiser> ; conditional_expression) {
+  \\...
+    } else {
+  \\...
+    };
+#+END_SRC
+
+The thing to rememebr is that the initialiser is only seen inside the round bracket of the if and tehrefore it can only be accessed and used by the consitional expression
+**** TODO : add an example to show this initialiser
+
+** /switch/ statements
+The syntax is the following
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+switch (expression){
+ case option_1:
+ //some code
+ break;
+ case option_2:
+ //some more code
+ break;
+ default:
+ //some other code}
+#+END_SRC
+and expression can be one of two things
+1. an int value
+2. an element of an [[file:enum.org][enum]]
+note that _it cannot be a boolean variable_. Eventually the expression can be a variable defined there and it will be only seen by the scope of the switch.
+
+The program will look at the expression in round brackets, and then it will match the corrisponding case.
+It will then execute the code for that case.
+At this point there are two possibilities
+1. a /break/ is encountered. In this case the program _exits_ the switch.
+2. nothing is encountered: in this case, the code proceeds by reading the _next case_, i.e. executing all the rest of the code of the switch.
+
+See this example
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+
+enum class week {Mo,Tu,We,Th,Fr,Sa,Su,fake_day};
+using enum week;
+int main() {
+
+  week day {Th};
+
+  //Uncomment the following line to see what happens if default is used
+  //week day {fake_day};
+
+  cout <<"Today is ";
+  switch (day){
+    case Mo: cout<<"Monday, which comes before "; [[fallthrough]];
+    case Tu: { cout<<"Tueasday, which comes before "; int a_variable;}
+    case We: cout<<"Wednesday, which comes before ";
+    case Th: cout<<"Thursday, which comes before ";
+    case Fr: cout<<"Friday, which comes before ";
+    case Sa: cout<<"Saturday, which comes before ";
+    case Su: cout<<"Sunday, which is the last day of the week."; break;
+    default : cout<<"not a real day of the week";
+  }
+
+ }
+#+END_SRC
+
+#+RESULTS:
+: Today is Thursday, which comes before Friday, which comes before Saturday, which comes before Sunday, which is the last day of the week.
+
+Note that in the previous code there is a /fallthrough/ from teh first case to the last, where a break is encountered.
+This is why (to avoid warnings), the fallthrough attribute is added (between square brackets).
+Also, note that one has to open a scope only when variables are defined! (case Tu)
+
+*** Initialisers for /switch/
+As for if, also switch allows for [[file:initializer.org][initializers]]
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+switch(<initializer>;expression){body}
+#+END_SRC
