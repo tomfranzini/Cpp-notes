@@ -1,0 +1,107 @@
+#+title: Aliases
+* Types
+
+** Type inference
+*** /auto/ type
+This can be used to let the compiler understand the type of a varible or return value of a function.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+auto var {5}// The compiler understand that it is an int
+#+END_SRC
+
+If you have a function that return a type that maybe is very complicated,
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//definition of fun
+
+auto var { fun() };
+#+END_SRC
+
+**** auto& syntax
+It is important to remember that the /auto/ strips away the /const/ qualifier. For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const string message {"test"};
+
+//Define a function that returns a reference to const string
+const string& foo() {return message};
+
+//I can initialize var to be the return of foo()
+//Since auto strips away const, it means that var is of type string and NOT const stryng
+//this means that I HAVE MADE A COPY OF THE VARIABLE
+auto var { foo() };
+
+//If I really want a reference to const, I need to write
+const auto& var2 { foo() };
+
+#+END_SRC
+
+Another example to show this  behaviour is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+string str {"hello"};
+
+//Even if I am casting to const, result will be just a string because it is of "type auto"
+auto result {as_const{str}};
+#+END_SRC
+
+Takaways:
+- auto always _remove const and thus create a coppy_
+- To not create a copy use _auto&_ or _const auto&_
+
+**** auto* syntax
+auto can also be used for pointers.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int i {12};
+
+//Define a pointer to int
+auto p {&i};
+#+END_SRC
+
+However, this behaves in a strange way when combined with const
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const auto pi {&i}; //this LOOKS like an int pointer to const int, but in fact it is a cont pointer to non-const int!
+auto const pi {&i}; //this is exactly the same
+#+END_SRC
+
+To solve this, it is better to use *, as follows
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+auto* p {&i}; //Define a pointer using auto type
+
+const auto* p2 {&i}; //This is a pointer to const-int
+auto* const p3 {&i}; //This is a const pointer to non-const int
+//The behaviour now is precisely what we expect!
+
+//Also I can define a const pointer to const int
+const auto* const p4 {&i}; //this cannot be done without *
+#+END_SRC
+
+
+
+** Type aliases
+This is a way to create a _synonim_ for an existing type declaration.
+For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+using IntPtr = int*;
+#+END_SRC
+This is simply telling the compiler that whenever IntPtr is encountered, this is the same as int*.
+
+It seems useless, but it becomes handy when type names are very long, we will see this when dealing with [[file:templates.org][templates]].
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+
+//In the standard library we have
+//std::basic_string<char>
+//to define a string of char
+
+//For example, if I want to define a vector of strings of chars I would write
+//vector<basic_string<char>>
+
+//To make life easier, in std there is the following alias
+using string = basic_string<char>;
+#+END_SRC
+
+*** typedef
+In C++ older than C++11, this was done using /typedef/. However, this is less powerful when dealing with templates. For this reason _always prefer aliases_.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//using alias
+using IntPtr = int*;
+
+//Using typedef
+typedef int* IntPtr;
+#+END_SRC
