@@ -230,7 +230,4 @@ pair my_pair {'x',5};
 //Define the two new variables and assing via structured binding
 auto [the_string,the_int] {my_pair};
 println("First element is {}", the_string);
-
-
 #+END_SRC
-** Test
