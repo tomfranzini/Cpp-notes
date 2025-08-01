@@ -1,0 +1,32 @@
+#+title: Exeptions
+* Exceptions
+They are used to add some safety mesures in the code.
+An exeption is a situation _you want to avoid in code_.
+
+For example imagine you call a function and for some reason it is not able to do whatever it has to do.
+In this case you would return a nullptr or an error message.
+Exceptions are used to deal with this situations in a better way.
+
+The idea is teh following
+- the compiler detects a particular situationa and /throw/ an exception
+- anotehr piece of code /catch/ the exeption and do something appropriate
+
+Here is an example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+#include<print>
+using namespace std;
+
+double divide (double numerator, double denominator){
+    if (denominator == 0) throw invalid_argument {"Denominator cannot be 0."};
+    return numerator/denominator;
+}
+
+int main(){
+    println{"Division is {}", divide(3.0,4.0)};
+}
+#+END_SRC
+
+#+RESULTS:
+
+Here the exeption that is thrown is /invalid_argument/ which is in <stdexept>.
