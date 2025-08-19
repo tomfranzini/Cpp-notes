@@ -13,6 +13,254 @@ It is defined in the following way
 
 An important practice is that all methods and functions are _private_, and one implements functions like getters and setters (public/private) to access them.
 
+For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include<iostream>
+using namespace std;
+
+//Declarations of classes
+class human_being;
+class student;
+class physics_student;
+
+//Complete definition of classes
+class human_being {};
+class student : human_being {};
+class physics_student : student {};
+
+int main(){
+    physics_student John, Daisy;
+    clog<<"I created two physics students\n";
+}
+#+END_SRC
+
+#+RESULTS: (from clog) I created two physics students
+
+Clearly the declarations could be eliminated and the code would work anyway. However, these lines could become useful and necessary when dealing with dependencies between classes.
+
+For example one can assign the attribute of a name to a physics student, but it is not a characteristic that is propert to a physics student. It can be thought that it is a charactestistic of _any_ student and any physics student gets it for free.
+
+So for example I can now add _class members_, objects and functions, to the class.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include<iostream>
+#include<string>
+using namespace std;
+
+class human_being {};
+
+class student : human_being {
+    protected:
+        string name;
+    public:
+        student(const char* s) : name(s) {};
+};
+
+class physics_student : student {
+    public:
+        physics_student (const char *s) : student(s) {};
+};
+
+int main(){
+    physics_student John ("John Doe"), Daisy("Daisy McLorin");
+    clog<<"I created two physics students\n";
+}
+#+END_SRC
+
+#+RESULTS:(from clog) I created two physics students
+
+A few comments:
+- A class is _by default_ private. There are other tags: _public_ and _protected_. A struct is the same as a class with the _ONLY_ difference that it is by default public.
+  1. /public/ : everything that is declared as public is visible to _anything_ at any point of the code
+  2. /private/ : everything that is declared as private can be accessed _only by the members of the same class_
+  3. /protected/ : everything that is declared as protected is only visible by the class _and all descendants_.
+
+  For this reason, /name/ is an attribute that is visible to student and also physics_student and _not_ huma being.
+
+*** Constructors
+- In the classes student and physics_student we added two *special functions* whose _name coincide with the name of the class_ and these are _the only functions in c++ that do not have to return a type, because they return the type of the class_.
+  These are called *class constructors*.
+  The number of constructor is arbitrary because they can exist in overload.
+  Constructor can be public (as here) but also private.
+
+- Constructors have a special syntax to initialize them.
+  1. As said above, no return is needed
+  2. There is an _optional_ list of initializers, between the semicolon and the scope of the function. For example, in the example of student, we initialized the member /name/ with the string s.
+     Similarly in physics_student, we initialized _calling the constructor of the parent class_, passing the string s received.
+
+- A constructor is called every time we define a new variable of that type.
+
+- Methods of the class could be defined _outside the class_, for example
+  #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <string>
+using namespace std;
+
+class essere_umano{ };
+class studente : essere_umano{
+    protected:
+        string nome;
+    public:
+        studente(const char * s) : nome(s) { }};
+
+class studente_di_fisica : studente{
+    public:
+        //Declaration ONLY
+        studente_di_fisica(const char *);};
+
+//Definition of the constructor
+//I need the scope resolutor operator and I can add the initializer list
+studente_di_fisica :: studente_di_fisica(const char * s) : studente(s) { }
+
+int main( ){
+    studente_di_fisica
+        amilcare("Amilcar de Carthaginiensibus"),
+        teodolinda("Teodolinda de Bavaris");
+    clog << "sono stati realizzati due \"studente_di_fisica\"\n";}
+#+END_SRC
+
+- The tags /public/,... can be also used when identifying the inheritance of a given class, for example
+   #+BEGIN_SRC C++
+class student {/*...*/};
+//This
+class physics_student :  student {/*...*/};
+//is the same as
+class physics_student : private student {/*...*/};
+#+END_SRC
+
+- The problem is that if something is declared as private, it is not possible to access that variable from main.
+  This implies that in the class _there must be a *public* method that has access that variable and can return its value_.
+
+- If there is no constuctor expicitly defined, the class has _three default constructor that work anyway_. If we define even just one constructor, the default ones are not present anymore.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <iomanip>
+# include <string>
+# include <cstring>
+using namespace std;
+
+class human_being{
+    public:
+        //I define an enum class inside the class human being
+        //After the semicolon we explicitly say what is the underlying type, in this case it is bool
+        enum class Gender : bool {male=false, female=true};
+    protected:
+        Gender m_gender;
+
+        //constructor
+        human_being(Gender b) {m_gender = b; cout << "This is the constructor of a human_being\n";}
+};
+
+class student : human_being{
+    protected:
+        string m_name;
+        using human_being :: m_gender;
+    public:
+        using human_being::Gender;
+
+        //Constructor
+        student(const char * s, Gender b) : m_name(s), human_being(b) {
+        cout << "This is the constructor of a student\n";}
+};
+
+class physics_student : student{
+    friend ostream & operator << (ostream &, physics_student);
+    public:
+        //Public static member, this will be accessible at any time anywhere!
+        static size_t max_length;
+
+        Gender GetGender() {return m_gender;}
+
+        //This is teh constructor which takes two arguments and the second one is standard! In fact the enum class Gender is public in human_being, therefore it is inherited by student. Inside student in the public part we specify using human_being::Gender so the enum class is passed down to physics_student too.
+        physics_student(const char *s, Gender b = Gender::male) : student(s,b){
+            max_length = max(max_length, strlen(s));
+            cout << "This is the constructor of a physics_student\n";
+        }
+};
+
+size_t physics_student :: max_length = 0;
+
+//Define overload of functions for ostream
+ostream & operator << (ostream &o, human_being :: Gender s){
+    string genders[ ] {"feminine", "masculine"};
+    bool index =
+        (static_cast<bool>(s) == static_cast<bool>(human_being::Gender::male))
+        &&
+        (genders[true] == "masculine")
+        ||
+        (static_cast<bool>(s) == static_cast<bool>(human_being::Gender::female))
+        &&
+        genders[true] == "feminine";
+    return o << genders[index];}
+
+ostream & operator << (ostream &o, physics_student s){
+
+    o.setf(ios::left, ios::adjustfield);
+    return o << setw(1+s.max_length) << s.m_name << " of " << s.m_gender<<" gender";
+}
+
+int main(){
+    human_being :: Gender my_g;
+
+    physics_student john ("John Eve"),
+        amy("Amy Greene", my_g = human_being::Gender:: female),
+        array_of_students[] {
+        physics_student("Fred Lovey", my_g = human_being::Gender::male),
+        physics_student("Anne Leroy", my_g = human_being::Gender::female),
+        physics_student("Greg Jane")};
+
+    clog << "Here are the objects \"physics_students\"\n";
+    cout << john << '\n' << amy << '\n';
+    for(physics_student k : array_of_students) cout << k  << '\n';
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+This is the constructor of a human_being
+This is the constructor of a student
+This is the constructor of a physics_student
+This is the constructor of a human_being
+This is the constructor of a student
+This is the constructor of a physics_student
+This is the constructor of a human_being
+This is the constructor of a student
+This is the constructor of a physics_student
+This is the constructor of a human_being
+This is the constructor of a student
+This is the constructor of a physics_student
+This is the constructor of a human_being
+This is the constructor of a student
+This is the constructor of a physics_student
+John Eve    of masculine gender
+Amy Greene  of feminine gender
+Fred Lovey  of masculine gender
+Anne Leroy  of feminine gender
+Greg Jane   of masculine gender
+#+end_example
+
+Here is what happens
+1. I create a variable of type human_being::Gender called my_g
+2. I declare and define an object of type /physics_student/ called john and this calls a _constructor_. In this case it is a constructor that takes as value only a string of char. There is one such constructor, which has two arguments but the second one takes in a standard argument (male), and therefore can be used in this case.
+   Moreover, since physics_student inherits from student which inheriths from human_being, the compiler will instruct the linker to create the executable in such a way that these dependencies are take care of. This is what happens
+   1. creation of a human_being with _no name_
+   2. creating a student with _no name_, which will inherit the human_being characteristics. These features are labeled as _private_. However, the attribute /human_being::m_gender/ and teh enum class /human_being::Gender/ are labeled in such a way that they will be passed to descendant classes. This is done using the word /using/.
+   3. creating an physics_student object, which inherits stuff from the partent classes and it takes the name of john. This name is the only ay main() has to access data members of this object.
+3. When I define the constructor inside physics_student, I can call in the initializer list the cnstructor of the parent class. I can also avoid this, but in this case I have to write a default constructor in the parent class because this would be the one called.
+4. When an object is defined using the constructor the memory for that object is allocated, _not before_. This means that defining a class does not occupy space in memory.
+   An exception is for those members qualified as /static/.
+   In this case those variables are existing in the memory _when the program starts_, before creating any object of that type. Therefore
+   1. Any static object is _unique in the memory_, regardless teh numebr of object of that type
+   2. Every object of the class can access the static member
+   3. If a static object is _public_, it can be accessed at any time anywhere in the program _even if there are no objects of that class_!
+      For this reason one can access this method using the scope resolutor operator and not the dot operator, as in /physics_student::max_length/
+5. After that, amy is created by passing both arguments to the constructor. Notice that in order to pass /female/ one needs the scope resolutor, since the enum class Gender was defined in the class human_being and in particular inside its public part.
+6. Then an array of physics_students is created and initialize using the constructors. In this case the only difference is that the constructor is used EXPLICITLY (as a function).
+7. Then we define two functions that are needed to deal with output streams and these new types that we have defined.
+   They take a reference to /ostream/ as first input and they return it. This is _necessary_ so that we can use ricursivity (remember cout<<"hello"<<"world";)
+   They could return something different. See [[file:overload_operators.org][operator overload]].
+
+
 This is an example of a class, written in a module file so _without the implementations of the functions_
 
 #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
