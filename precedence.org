@@ -1,0 +1,55 @@
+#+title: Precedence
+* Precedence
+There is a well defined precedence order for all operators in c++
+
+| Level | Operators                                  | Associativity |
+|-------+--------------------------------------------+---------------|
+|     1 | ::                                         |               |
+|     2 | ++  -- (suffix)                            |               |
+|       | () (function calling)                      |               |
+|       | [] (array access)                          |               |
+|       | . ->                                       |               |
+|     3 | ++ -- (prefix)                             | right to left |
+|       | + - (unary)                                |               |
+|       | ~ or !                                     |               |
+|       | * & (unary)                                |               |
+|       | /sizeof/ /new/ /delete/                          |               |
+|       | () (casting)                               |               |
+|     4 | .* ->*                                     |               |
+|     5 | * / % (binary)                             |               |
+|     6 | + - (binary)                               |               |
+|     7 | >> <<                                      |               |
+|     8 | > < <= >=                                  |               |
+|     9 | \equal\equal  !=                                     |               |
+|    10 | & (binary)                                 |               |
+|    11 | ^                                          |               |
+|    12 | \vert                                          |               |
+|    13 | &&                                         |               |
+|    14 | \vert\vert                                         |               |
+|    15 | ? : (ternary) and every assigning operator | right to left |
+|    16 | /throw/                                      |               |
+|    17 | ,                                          |               |
+
+For example, consider the following: /*p++;/
+The compiler knows exactly how to deal with this command. ++(level 2) has precedence over * (level 3). This means that
+1. the pointer /p/ is incremented
+2. * will access to the first element of the pointer
+
+If I want to increment the value of the first element of the pointer I need to use a different notation: /(*p)++/.
+
+For example, /++*p/ is more complicated. Both operator are at level 3 so there is no clear precedence. In this case one consider _associativity_, which is by default left to right. Only for level 3 and 15 it is right to left. Therefore, in this case the way to read it is /++(*p)/, which means that *the first value of p is incremented by 1*.
+Instead, /*++p/ means that the compiler is accessing the *second* value of p.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+
+int main() {
+    int a[] {10,20};
+    int* p = a;
+    cout<<++*p <<" and "<<*++p<<endl;
+}
+#+END_SRC
+
+#+RESULTS:
+: 11 and 20
