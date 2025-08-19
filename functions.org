@@ -1,4 +1,5 @@
 #+title: Functions
+#+OPTIONS: toc:2
 * Functions
 ** Declaration and definition
 
@@ -47,6 +48,253 @@ return number1 + number2;
 }
 #+END_SRC
 
+**** standard arguments
+I can tell the compiler the default value of some entries of a function. They must be defined _only once_ and always postponed to all other arguments. For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void func (int i; int k=5);
+
+void func (int i=4, int k); //this would be fine if also i is standard
+//void func (int i=4 , k=5); // this is an error!
+
+//Then I can define it
+void func (int i,int k){...};
+
+int main(){
+    func(3); //this calls func(3,5)
+    func(3,4); //this calls func(3,4)
+}
+#+END_SRC
+
+A bigger example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+using namespace std;
+
+//1st funz declaration
+void funz(int, int = 2); // NAMES DO NOT MATTER. I am just saying that funz has a standard argument!
+
+void gunz(  ){
+// void funz(int = 1, int); // ERROR: in a different scope!
+    funz(5); // OK
+    funz(7, 4); // OK
+//funz(  ); // ERROR: funz has not TWO standard arguments
+}
+
+void lunz(  ){
+    void funz(int, int); // CORRETTO: nell'ambito di lunz NON CI SONO arg. st.
+    funz(10, 19); // CORRETTO
+// funz(7); // ERRORE: nell'ambito di lunz NON CI SONO arg. st.
+    void funz(int, int = 8); // CORRETTO: funz acquisisce un arg. st. in lunz
+    funz(11); // ORA È CORRETTO: viene eseguita funz(11, 8)
+//void funz(int, int = 8); // ERRORE: ridichiarazione di un arg. st. nello stesso ambito
+}
+
+void funz(int = -1, int);
+// CORRETTO: funz acquisisce anche il primo argomento come standard
+
+void munz(  ){
+funz(  );
+// CORRETTO: ora la funz del namespace globale ha due argomenti standard
+// viene eseguita funz(-1, 2)
+}
+
+int main(  ){
+funz(  ); // CORRETTO, come in munz
+funz(12); // CORRETTO
+funz(44, 88); // CORRETTO
+gunz(  );
+lunz(  );
+munz(  );
+}
+
+// finalmente funz viene definita
+void funz(int k, int l) {cout << k << ' ' << l << endl;}
+#+END_SRC
+
+#+RESULTS:
+: -1 2
+: 12 2
+: 44 88
+: 5 2
+: 7 4
+: 10 19
+: 11 8
+: -1 2
+
+****** TODO : From c++20 also /auto func (auto k=2){return k;}/ is valid.
+****** TODO : see words [[file:dictionary][concept]] and [[file:dictionary][requires]] .
+
+
+** Pointers and functions
+One has to rememebr that the _name_ of a function is itself a _constant_ _pointer_ to  that function. See for example the following code:
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <cmath>
+using namespace std;
+
+//This is a function that takes as argument ANOTHER FUNCTION of double type.
+//It has a standard argument which is THE NAME of the function sin
+//M_PI is a declared constant
+void funz(double s(double) = sin){cout << s(M_PI) << '\n';}
+
+int main(  ){
+    funz(  );//calls sin
+    funz(cos);//calls cos
+}
+#+END_SRC
+
+#+RESULTS:
+: 1.22465e-16
+: -1
+
+Another example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <cmath>
+using namespace std;
+
+//Takes in a double function s and a double number and compute s(x)
+double funz(double s(double), double x){return s(x);}
+
+int main(  ){
+    cout << "verifica dell'identità trigonometrica 1/cos^2 = 1 + tan^2 \n";
+
+    for(int i=0; i <= 20; ++i){
+        double z = 0.5*M_PI*(i/10.-1); //creates values from -pi/2 to pi/2
+        cout <<"per x = " <<z<<" si ha "<< 1.0/(funz(cos, z)*funz(cos, z))<< " da confrontare con "<< 1.0 + funz(tan, z)*funz(tan, z) <<'\n';
+    }
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+verifica dell'identità trigonometrica 1/cos^2 = 1 + tan^2
+per x = -1.5708 si ha 2.66709e+32 da confrontare con 2.66709e+32
+per x = -1.41372 si ha 40.8635 da confrontare con 40.8635
+per x = -1.25664 si ha 10.4721 da confrontare con 10.4721
+per x = -1.09956 si ha 4.85184 da confrontare con 4.85184
+per x = -0.942478 si ha 2.89443 da confrontare con 2.89443
+per x = -0.785398 si ha 2 da confrontare con 2
+per x = -0.628319 si ha 1.52786 da confrontare con 1.52786
+per x = -0.471239 si ha 1.25962 da confrontare con 1.25962
+per x = -0.314159 si ha 1.10557 da confrontare con 1.10557
+per x = -0.15708 si ha 1.02509 da confrontare con 1.02509
+per x = 0 si ha 1 da confrontare con 1
+per x = 0.15708 si ha 1.02509 da confrontare con 1.02509
+per x = 0.314159 si ha 1.10557 da confrontare con 1.10557
+per x = 0.471239 si ha 1.25962 da confrontare con 1.25962
+per x = 0.628319 si ha 1.52786 da confrontare con 1.52786
+per x = 0.785398 si ha 2 da confrontare con 2
+per x = 0.942478 si ha 2.89443 da confrontare con 2.89443
+per x = 1.09956 si ha 4.85184 da confrontare con 4.85184
+per x = 1.25664 si ha 10.4721 da confrontare con 10.4721
+per x = 1.41372 si ha 40.8635 da confrontare con 40.8635
+per x = 1.5708 si ha 2.66709e+32 da confrontare con 2.66709e+32
+#+end_example
+
+*** Function pointers
+The syntax is
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void (*ptr) ();
+#+END_SRC
+
+This defines a pointer /ptr/, that can _point void functions_ without arguments.
+
+One has to be careful to _put the round brackets_ otherwise it would be afunction that returns a pointer to void.
+
+For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <cmath>
+using namespace std;
+
+//In the DECLARATION (not definition) of a function one can omit names of arguments
+//this means that this makes sense
+double funz(double (*)(double), double);
+
+//even this makes sense and it means the same thing
+double funz(double (double), double);
+
+
+double (*punt) (double) = nullptr;
+
+double (*qunt)(double (*)(double), double) = funz;
+
+double funz(double s(double), double x) {return (*s)(x);}
+
+//The dereference of a pointer to a function is the pointer itself so one can use both, like *s or s
+double gunz(double (*s)(double), double x) {cout << s(x) << '\n'; return 0.0;}
+
+int main(  ){
+    char c ='c';
+    double x=-1.2;
+    cout << "quale funzione vuoi ? s = seno, c = coseno\n";
+    while(!punt) {
+        //cin >> c;
+        switch(c){
+            case 's': punt = sin; break;
+            case 'c': punt = cos; break;
+            default: cout << "scelta non valida; rifare\n";
+        }
+    }
+    cout << "digita un numero reale ";
+    //cin >> x;
+    if(x <= 0.0){
+        qunt = gunz, cout << "da gunz ";
+        (*qunt)(punt, x); return 0;}
+    cout << "da funz "<< qunt(*punt, x) << '\n';
+}
+#+END_SRC
+
+#+RESULTS:
+: quale funzione vuoi ? s = seno, c = coseno
+: digita un numero reale da gunz 0.362358
+
+
+Some remaks
+- When defining a pointer to function one can put an EMPTY SCOPE. In this case _one cannot perform an immediate initialization_. Better to avoid this.
+- One can define *array of pointers to functions*. For example
+  #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+//Definition of an array of pointers to double functions that take doubles as entries
+int main(  ){
+double (*punt[2]) (double) {sin, cos};
+}
+  #+END_SRC
+- One can even define _pointers to pointers to functions_.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int main(  ){
+    //CONST IS NECESSARY LATER
+    const int n = 5;
+
+    //Definition of a pointer to a pointer to double functions that take double inputs
+    double (**qunt) (double);
+
+//Now initialise the pointer to an array of n pointers to double functions
+//the round brackets after new ARE MANDATORY
+//this forces n to be a const or constexpr
+    qunt = new (double(*[n])(double));
+// inizializzare da qunt[0] a qunt[n-1]
+// magari con uno switch discendente e senza break
+// PROVATECI
+}
+#+END_SRC
+To avoid the round bracket and therefore allow n to be a VARIABLE (not const) one should use typedef
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int main(  ){
+    int n;
+    typedef double (**qunt) (double);
+    typedef double (*qunt_) (double);
+    qunt doppio_puntatore;
+    cout <<"quanti puntatori a funzione vuoi ? ", cin >> n;
+    doppio_puntatore = new qunt_[n];
+// inizializzare da doppio_puntatore[0] a doppio_puntatore[n-1]
+// magari con uno switch discendente e senza break
+// PROVATECI
+}
+#+END_SRC
+- _IT IS NOT POSSIBLE TO INSERT STANDARD ARGUMENTS IN DECLARATION OF POINTER TO FUNCTION_
+
+
 ** Function overloading
 This is one of the crucial features of c++. It allows to define several different functions with *the same name* but different arguments.
 #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
@@ -55,8 +303,45 @@ double addNumbers(double a, double b) { return a + b; }
 #+END_SRC
 Here the function is defined twice with different types of aguments and the compiler will /resolve/ automatically which one to use depending on the aguments the function is called with.
 
+Also, one could repeat the declaration of a function many times, with no errors
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void funz();
+void funz();
+
+void funz() {cout<<"hello";} // this is the definition
+
+int main(){
+    void funz();
+
+    funz();
+}
+#+END_SRC
+
+This because here is the _linker_ who has the task to create the binary exacutable and eventually give error for some wrong or double _definitions_. For example, this would be an error
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+void funx(){cout<<"hello";}
+void funx(){cout<<"farewell";}
+#+END_SRC
+
+When there is an ambiguity, it is the _linker_ who signals the error. For example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+#include <iostream>
+using namespace std;
+void funz (int i) {cout<<"Hello";}
+void funz (int &i) {cout<<"Farewell";}
+
+int main() {
+    int k=5;
+    funz(k); //compiler is ok with this, linker does not know which function to call. This because k is a lvalue which is implicitly a lreference to 5.
+
+    funz(5) //this is totally fine and "hello" is printed
+}
+#+END_SRC
+
+#+RESULTS:/tmp/babel-vQhLTN/C-src-jAxXWQ.cpp:15:9: error: call of overloaded ‘funz(int&)’ is ambiguous
+
 ** Initializer lists
-If you want to define a function that accepts a variable number of arguments, one can use /std::initializer_list/ class templace. You only have to specify the type.
+If you want to define a function that accepts a variable number of arguments, one can use /std::initializer_list/ class template. You only have to specify the type.
 
 #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
 #include <print>
@@ -84,3 +369,109 @@ int main() {
 : b is 6
 
 Note that the initializer list is *type specific*, so if something not int is passed, it will give error!
+
+** References and pointers
+See the following code
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+# include <iostream>
+using namespace std;
+
+void funz(int *p, int n){
+    //Here p is passed as a pointer. This means that in the scope of the function I am creating a NEW pointer, that is pointing at the same memory as a but IT IS A DIFFERENT OBJECT.
+
+    cout << "Inside funz: here are the pointed values\n";
+
+    for(int i=0; i < n; ++i) cout << p[i] << ' ';
+
+    cout << '\n';
+    cout << "Now increment by 1 each value\n";
+
+    for(int i=0; i < n; ++i) ++*(p+i); //notice here I am incrementing THE POINTER first, meaning that when i=1, I am using p+1, i.e. the second element of p! Then I access the value with * and THEN I add 1. this will modify what p is pointing at which is a ITSELF! Therefore in the end it will be changed too!
+
+    cout << "And I get...\n";
+
+    for(int i=0; i < n; ++i) cout << p[i] <<' '; cout << endl;
+
+    cout <<"Now I re-initialize the pointer as I want\n";
+
+    int m = n < 4 ? 4 : n;
+
+    p = new int[m] {10, 20, 30, 40}; //Here I am re-initializing p as SOMETHING NEW. This is NOT DOING ANYTHING TO a! (in fact, a cannot be changed because it is a static array!)
+
+    cout << "And now I have\n";
+    for(int i=0; i < m; ++i) cout << p[i] << ' ';
+    cout << '\n';
+}
+
+void gunz(int *&p, int n){
+    cout <<"Inside gunz: here are the pointed values\n";
+
+    for(int i=0; i < n; ++i) cout << p[i] << ' ';
+
+    cout << '\n';
+    cout << "Now increment by 1 each value\n";
+
+    for(int i=0; i < n; ++i) ++*(p+i);
+
+    cout << "And I get...\n";
+
+    for(int i=0; i < n; ++i) cout << p[i] <<' '; cout << endl;
+
+    cout <<"Now I re-initialize the pointer as I want\n";
+
+    int m = n < 4 ? 4 : n;
+
+    p = new int[m] {10, 20, 30, 40};//This time the pointer that is passed IS CHANGED bacuse the new variable it is a REFERENCE to that pointer! So it is an alias to the exact same object!
+
+    cout << "And now I have\n";
+
+    for(int i=0; i < m; ++i) cout << p[i] << ' ';
+
+    cout << '\n';
+}
+
+int main( ){
+    int a[ ] {1, 2, 3, 4, 5}; //Initialize an array
+    int *b = new int[3] {100, 200, 300};
+
+    funz(a, 5);
+
+    gunz(b, 3);
+
+    cout <<"In main. Every function has been called\n"
+         << "Inside a:\n";
+    for(int i=0; i < 5; ++i) cout << a[i] << ' ';
+    cout << "\n this is what b poins:\n";
+    for(int i=0; i < 3; ++i) cout << b[i] << ' ';
+    cout <<"\n(maybe there is something else?)\n";
+    cout << b[3] << "\nhere it is...\n";
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Inside funz: here are the pointed values
+1 2 3 4 5
+Now increment by 1 each value
+And I get...
+2 3 4 5 6
+Now I re-initialize the pointer as I want
+And now I have
+10 20 30 40 0
+Inside gunz: here are the pointed values
+100 200 300
+Now increment by 1 each value
+And I get...
+101 201 301
+Now I re-initialize the pointer as I want
+And now I have
+10 20 30 40
+In main. Every function has been called
+Inside a:
+2 3 4 5 6
+ this is what b poins:
+10 20 30
+(maybe there is something else?)
+40
+here it is...
+#+end_example
