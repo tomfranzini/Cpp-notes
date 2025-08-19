@@ -1,5 +1,6 @@
 #+title: Exeptions
 * Exceptions
+** A simple introduction
 They are used to add some safety mesures in the code.
 An exeption is a situation _you want to avoid in code_.
 
@@ -14,7 +15,7 @@ The idea is teh following
 Here is an example
 #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
 #include <iostream>
-#include<print>
+
 using namespace std;
 
 double divide (double numerator, double denominator){
@@ -23,10 +24,42 @@ double divide (double numerator, double denominator){
 }
 
 int main(){
-    println{"Division is {}", divide(3.0,4.0)};
+    println("Division is {}", divide(3,0));
 }
 #+END_SRC
 
 #+RESULTS:
 
 Here the exeption that is thrown is /invalid_argument/ which is in <stdexept>.
+In this particular pice of code, the exeption is thrown but it is not catched, and therefore the code terminates.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+
+using namespace std;
+
+double divide (double numerator, double denominator){
+    if (denominator == 0) throw invalid_argument {"Denominator cannot be 0."};
+    return numerator/denominator;
+}
+
+int main(){
+    try{
+        println("Division is {}", divide(3,2));
+        println("Division is {}", divide(3,4));
+        println("Division is {}", divide(3,0));
+        println("Division is {}", divide(1,4));
+        } catch (const invalid_argument& exeption) {
+        println("Exeption caught: {}", exeption.what());
+    }
+}
+#+END_SRC
+
+#+RESULTS:
+: Division is 1.5
+: Division is 0.75
+: Exeption caught: Denominator cannot be 0.
+
+- Here the first two computations work, while the third one triggers the throw that is catched in the code and prints the exeption that has been caught.
+- Note the use of the method /.what()/ which returns the string with the explanation of the exeption.
+- The important thing is that the fourth division _is never executed_! This because after the throw the code continues in teh catch block!

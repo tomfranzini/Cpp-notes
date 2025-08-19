@@ -23,7 +23,7 @@ Usually one has expression like "var1 > var2" and similar stuff.
 
 Remember also that else always attach to teh closest if. For example see this code:
 
-#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
 #include <iostream>
 using namespace std;
 

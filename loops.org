@@ -2,7 +2,7 @@
 * Loops
 ** while
 The syntax is
-#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
 int i {0};
 
 while (i < 5){
@@ -10,6 +10,8 @@ while (i < 5){
   i++;
  }
 #+END_SRC
+
+#+RESULTS:
 
 Note that /i<5/ is evauated _before_ entering the loop. This means that if teh expression is false, nothing in the loop is read and the code continues from the end of teh scope of while.
 

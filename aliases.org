@@ -72,8 +72,16 @@ auto* const p3 {&i}; //This is a const pointer to non-const int
 const auto* const p4 {&i}; //this cannot be done without *
 #+END_SRC
 
+*** /decltype()/
+It takes an expression and computes the type of that expression
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+int x {34};
 
+//I define y assigning teh type of x
+decltype(x) y {14};
+#+END_SRC
 
+It is basically the same as /auto/ with the difference that _it will not strip off the const qualifier_.
 ** Type aliases
 This is a way to create a _synonim_ for an existing type declaration.
 For example
