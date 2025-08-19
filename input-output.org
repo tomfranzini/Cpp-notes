@@ -1,0 +1,819 @@
+#+title: InputOutput
+* Input
+The question is how to IMPORT data from outside the code. There are different supports
+- the keyboard
+- hard disk and documents saved in there
+- removable disks (CD,USB,...)
+- the computer memory
+- the video input: to read images, videos or to use interactively teh mouse
+- the audio input: to read audio
+- the network input: for data coming from the web
+- ...
+
+  At the level of the c++ language _all input strams are treated in the same way_, as a unidimensional flow of bytes.
+
+  All input files must be
+  1. _opened_. The code need to know taht the document exists. This is where the different type of inputs are treated differently.
+
+  2. _read_. teh code can access and read the document. there is an internal variable that is a _reading index_ that keeps track of the position of the reader in the stream and it is updated automatically. In partiular, once reading is over the index is updated automatically, i.e.
+     - once reading is done, stream is ready for the next reading
+     - if the index goes forward of n bytes, that is precisely the same amount of bytes transferred to the code.
+     - once opened the index is on the FIRST BYTE and _its value is zero_.
+
+There are three systems to deal with i/o
+1. Unix/Posix
+2. stdio
+3. ios: this is the c++ way, based on objects
+
+** Declaring an istream
+First one need to include the documents containing all types needed
+- /#include <fstream>/ : for _disk_ support
+- /#include<sstream>/ : for _memory_ support
+
+  Then one has to declare _for each input stream a new object that we want to keep open at the same time_, as follows
+
+  #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ifstream disk_input;
+istringstream memory_input;
+
+//Alternative definitions
+istringstream array_of_memory_inputs[3];
+
+ifstream *pointer_to_disk_stream = new ifstream;
+  #+END_SRC
+
+** Opening and closing a stream
+It is different for disk and memory streams
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+memory_input.str("10 20 30");//This "opens" the string that is passed and it is the string itself that is read! This can never fail.
+
+disk_stream.open("document_name");//This opens the file that we want to read which needs to be in teh same folder as the code! This can fail if the document is not present.
+
+//If the document does not exist open will return false and that this could be done
+if(!disk_input) {cout <<"Invalid document.";}
+#+END_SRC
+
+It is also possible to define and open at the same time
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ifstringstream memory_input("10 20 30");
+
+ifstream disk_input("file_name");
+#+END_SRC
+
+Declared input stream can be reused for different documents, provided that we open and close in the correct way
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ifstream document; //declaration
+
+document.open("mydoc");//opening file
+
+//things with mydoc
+
+document.close();
+
+//here document is still defined and so I can reopen something else
+
+document.open("another_doc");
+
+//....
+
+//------------------------------------------------------------------------
+ifstringstream memory_input("a_string_to_be_read");
+
+//stuff with the string
+
+memory_input.clear();
+
+//now the string has been removed and I can reuse the object
+
+memory_input.str("another_string_to_be_read");
+
+//....
+
+#+END_SRC
+
+** Moving in the istream
+Here are some functions that are useful
+*** /seekg/
+This is valid both for ifstream and istringstream.
+
+It needs
+- one argument (int): tells how many bytes to move on the stream. This value is _from the beginning of the stream_.
+- two arguments: the first is how many bytes, the second is _from which point to start_, and it can be one of the three possibilities
+  1. /ios::beg/ :beginning of the stream
+  2. /ios::end/ end of the stream
+  3. ios::cur position in the stream when the function is called
+
+Here ios:: _is not a namespace_ and therefore _IT NEEDS TO BE WRITTEN HERE_.
+seekg-ing before beg and after end, gives error.
+Clearly if the second parameter is ios::end, the first one has to be a negatve number.
+
+*** /tellg/
+This methods returns teh current position of the reading index. This means that /document.tellg()/ is the same as /ios::cur/ _in that moment_.
+
+** Extracting from the istream
+*** />>/
+There is the operator />>/, which is used to extract data from the stream.
+Teh syntax is
+#+BEGIN_SRC C++
+any_stream_object >> parameter;
+#+END_SRC
+
+There is an overload of the operator />>/ for _every_ type. This means that depending on the type of teh parameter on the RHS, a different function is called which lives in the object any_stream_object.
+
+How />>/ works
+1. starting from the _current_ posiition of the stream, it _ignores_ all spaces and tabs, new lines
+2. if point (1) is succesful, it means that at the current position there is a textual byte ready to be read. The extraction proceeds by taking _all_ bytes that are of type /parameter/, updating the reading index. When teh type is not good anymore, or the end of stream is reached, the reading _fails_.
+3. If there are zero bytes extracted, teh function _fails_.
+   If it works, then the datat read are passed in memory to the operand /parameter/
+4. The function returns the _same type as the object that called it_, in this case /any_stream_object/, so that something like /cin>>text1>>text2;/ makes sense (first it is evaluated cin>>text1, and then cin is again returned so /cin>>text2;/ is evaluated)
+
+An example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <sstream>
+using namespace std;
+
+int main(  ){
+    //Define an input stream in memory and open it at the same time
+    istringstream is ("10 + 20 = 30 ");
+    int n[2], errore = -1;
+    double x;
+    char c[2];
+
+    //This is the type of ios::beg
+    ios_base::seekdir d = ios::beg;
+
+    cout<<"As I open the file, the stram index is at position "<<is.tellg()<<'\n';
+
+    //Move the index to the end without moving
+    is.seekg(0, ios :: end);
+
+    //The size of bytes (first entry of seekg) is of type streamsize
+    streamsize s = is.tellg();
+
+    cout << "The stream contains " <<s<< " bytes\n";
+
+    //Move back to the beginning, d is defined as ios::beg
+    is.seekg(0, d);
+
+    is >> n[0];
+    cout << "After reading "<< n[0]<<" the stream is at position "<<is.tellg()<<'\n';
+
+    //Redefine d
+    d = ios :: end;
+
+    //Move to the end and move 3 backwards
+    is.seekg(-3, d);
+
+    cout<<"After seekg(-3, ios::end) we are before byte "<<is.tellg()<<'\n';
+    is >> x;
+    cout<< "After reading " << x<< " index is before byte "<<is.tellg()<<" which coincide with "<< s-1<<'\n';
+
+    //Redefine d to current position
+    d = ios :: cur,
+        is . seekg(-4, d),
+        cout<< "After seekg(-4, ios::cur) is before byte "<< is.tellg() << '\n';
+    //Extract the =
+    is >> c[1];
+
+    //Move again from current position, which is AFTER the =
+    is.seekg(-6, d),
+        cout << "After reading" << c[1]<< " and seekg(-6, ios::cur) is before byte "<<is.tellg()<<'\n';
+
+    //I extract the + because c is of tyepe chrar, then the function return is again, and I extract 20 which is an int
+    is >> c[0] >> n[1];
+
+    cout<<"Everything has been read. We move before ios::beg on purpouse.\n";
+    //If I move to a forbidden position, is is FALSIFIED
+    is.seekg(-20, d);
+    //Nothing is actually read
+    is >> errore;
+
+    if(!is) cout << "ERROR! Nothing can be read anymore. Error is still "<<errore<< '\n';
+
+    cout << "I have read: "<< n[0]<<c[0]<<n[1]<<c[1]<<x<<'\n';
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+As I open the file, the stram index is at position 0
+The stream contains 13 bytes
+After reading 10 the stream is at position 2
+After seekg(-3, ios::end) we are before byte 10
+After reading 30 index is before byte 12 which coincide with 12
+After seekg(-4, ios::cur) is before byte 8
+After reading= and seekg(-6, ios::cur) is before byte 3
+Everything has been read. We move before ios::beg on purpouse.
+ERROR! Nothing can be read anymore. Error is still -1
+I have read: 10+20=30
+#+end_example
+
+Some remarks:
+- The right operand of >> _cannot be a pointer_ except for pointer to void and pointer to char.
+
+*** Non binary methods
+**** /get()/ and /getline()/
+This is another way to extract data _also from binary files_ (i.e. no distictions for for example spaces). There are different overloads
+- /get()/ : extracts the byte and return the int value
+- /get(char&)/ : extracts one byte and memorizes it in the argument received
+- /get(char*,int,char='\n')/ : this is the same as getline() below, with teh only different that the third argument is _not xtracted_.
+- ...
+
+And fora getline
+- /getline(char*, int, char='\n')/ : starting from the current position in the stram thec ompiler extracts _all_ bytes which are stored in the pointer in the first argument (it must be initialized), until
+  1. the end of stream is reached and an error appears
+  2. in the stream the byte given in the _third_ argument is found, default is '\n'. The byte is read, so the index is updated to be _after_ it, but it will _not_ appear in the extracted stream. The functions add the NUL byte and is completed.
+  3. If the function extracts all bytes until it reaches the value of the second argument -1, the function adds the NUL byte to those in the first argument and ends giving a warning.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+# include <iostream>
+using namespace std;
+
+int main(  )
+{
+char *p = new char[20];
+cin . getline(p, 9);
+cout << p << '\n';
+if(!cin) cout << "stavi per far uscire la benzina...\n";
+}
+#+END_SRC
+
+
+**** /peek()/
+No arguments, it return the byte that _is going to be read_, whitout extracting it and therefore without moving the index.
+
+**** ignore(int=1 , char)
+There are two standard arguments. It is used to _ignore_ bytes in the stream without saving them anywhere.
+- the first arguments tells _how many bytes to ignore_. Standard value is one. Therefore
+  /ignore(n)/ same as /seekg(n,ios::cur)/
+  /ignore() same as seekg(1,ios::cur)/
+- the second argument is a char (standard value is the end of the file) We tell ignore _until_ the char has been _thrown away_. It is the same a seekg, with the difference that you don't need to tell how far to go, but just at which character to stop ignoring. Clearly this character has to be _inside_ the number of bytes passed in teh first argument!
+
+**** /eof()/
+No arguments. It returns always _false_, unless the reading index is gone _after_ the end of the stream.
+
+*** Binary methods
+
+**** /read(char*,streamsize)/ for binary files
+The first argument is where to save what has been read.
+The second argument tells how many bytes to read
+
+**** /gcount()/ binary
+No arguments. It returns the number of bytes extraxted from the stream during teh most recent _binary_ reading. This has nothing to do with the reading index modified by seekg. See
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <sstream>
+using namespace std;
+
+int main(  ){
+    //Define the memory string
+    istringstream is(" 10 20 30.6 ");
+
+    int i;
+    char c[  ] {0,0,0,0};
+
+    //Reads from memory stream until first space
+    is >> i;
+    //gcount does not record this
+    cout<<"I have read " << i<<" for a numebr of "<< is.gcount()<<" bytes\n";
+
+    //Back at the beginning
+    is.seekg(0);
+    //Now I read using read (works on binaries)
+    is.read(c, 3);
+
+    //gcount is updated
+    cout<< "Read "<<c<<" for a number of "<< is.gcount()<<" bytes\n";
+
+    is . seekg(0);
+
+    cout<<"seekg Does not change gcount: "<<is.gcount() << '\n';
+
+    c[0] = is.get();//saves the first char in is inside c[0]
+    cout<<"Read ["<< c[0]<< "] For a number of "<<is.gcount()<<" bytes\n";
+}
+#+END_SRC
+
+#+RESULTS:
+: I have read 10 for a numebr of 0 bytes
+: Read  10 for a number of 3 bytes
+: seekg Does not change gcount: 3
+: Read [ ] For a number of 1 bytes
+
+**** /unget()/
+It moves back the reading index of one byte, but it is not the same as seekg(-1,ios::cur), because gcount would not be updated in teh latter case.
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <sstream>
+using namespace std;
+
+int main(){
+    istringstream is(" 10 20 30.6 ");
+
+    cout<< "First I am in "<<is.tellg() << '\n';
+    char c = is.get();
+
+    cout<< "Then I am in "<< is.tellg() << " with "<< is.gcount()<<" with value [" << c << "]\n"; //gcount is updated using get and c is a space
+
+    is.seekg(2, ios::cur); //then I skip 2
+
+    cout<< "After seekg I am in "<< is.tellg() << " with "<< is . gcount(  ) << '\n';//gcoutn not updated by seekg
+
+    is . unget(  );//I unget teh LAST byte
+
+    cout<< "After unget I am in "<< is . tellg(  ) << " with "<< is . gcount(  )
+<< " and if I read I find ["; //index position is correct, but gcount is also updated by -1!
+
+cout << (c = is.get(  )) << "]\n";
+}
+#+END_SRC
+
+#+RESULTS:
+: First I am in 0
+: Then I am in 1 with 1 with value [ ]
+: After seekg I am in 3 with 1
+: After unget I am in 2 with 0 and if I read I find [0]
+
+**** TODO /putback/
+
+** Error handling
+There is a variable when a stream is opened, that tells whether the status of the stream is fine, and its value is
+- /std::ios_base::goodbit/ which is by default zero
+  or it is a declared variable of the following non zero variables
+- /std::ios_base::badbit/
+- /std::ios_base::eofbit/
+- /std::ios_base::failbit/
+**** /rdstate()/
+no argument and returns a variable of type std::ios_base::iostate
+
+**** clear(std::ios_base::iostate = 0)
+It is used to _set_ the status to a certain value. It is used in particular to _turn off_ various warnings
+* Output
+As for inputs streams, before being able to write, the compiler needs to _open_ the file on which to write. There are differences with the input stream
+1. the ostream _has no end_. the only limits are physical. The end of the ostream is decided when the stream is _closed_
+2. there is a _writing index_ which is at position zero when file is opened.
+3. if the output file is non existent then _it will be created_, if it is existent, it wll be _overwritten_.
+
+   #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+using namespace std;
+
+int main(){
+    for(int i=0; i <= 10; ++i)
+        cout << i/3. << '\t' << 2*i/3. << '\t' << i << '\n';
+}
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   0	0	0
+   0.333333	0.666667	1
+   0.666667	1.33333	2
+   1	2	3
+   1.33333	2.66667	4
+   1.66667	3.33333	5
+   2	4	6
+   2.33333	4.66667	7
+   2.66667	5.33333	8
+   3	6	9
+   3.33333	6.66667	10
+   #+end_example
+
+   There are other methods bsides cout, cerr and clog.
+   - cout is the _standard output stream_
+   - cerr/clog are for the _standard error stream_
+All three has the terminal as output support, this means that the output can be mixed.
+As a rule:
+- cout for actual message
+- clog for temporary messages, and values of variables
+- cerr to debug
+
+Se for example /clogcerr/test.cpp.
+These outputs can be accessed separately and can be saved in different files, for example using the linux bash:
+1. ./a.out : all output are mixed on terminal
+
+2. ./a.out   >  file1 : standard putput is saved on file1, while error output on terminal
+
+3. ./a.out   >  /dev/null : standard output is destroyed (/dev/null is like a black hole), while error output is on terminal
+
+4. ./a.out   2>  file2 : standard output on terminal, err output on file2
+
+5. ./a.out   2>  /dev/null : st out on terminal, err out destroyed
+
+6. ./a.out   1>  file1_1    2>  file2_1 : both outputs on different files
+
+7. ./a.out   1>  file1_3    2>  /dev/null : file1 saves cout, clog/cerr destroyed
+
+8. ./a.out   1>  /dev/null    2>  file2_4 : cou destroyed, cerr/clog saved in file2_4
+
+9. ./a.out   1>  /dev/null    2>  /dev/null : everything is destroyed
+
+10. ./a.out   &>  /dev/null : everything is destroyed
+
+11. ./a.out   &>  file12_5 : everything is saved only in file12_5
+
+A few things to remember:
+- No space between the number and >! In the first two examples 1> is the same as >
+- If the file we want to write on exist already _it will be completely overwritter_ by the output
+- Instead, if we want to _add_ the result of the output to a file that aleady exist,   one should write
+  /./a.out >> file1/
+
+** Opening an output stream
+There are two types, which are parrallel to the input ones,
+- ofstream
+- ostringstream
+
+*** ofstream
+When declaring a new output stream, one can use the name of a file _whcih does not exist yet_,
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ofstream out_file ("myfile");
+#+END_SRC
+If the file exist, then the content will be replaced with the new stream.
+The outstream file will be falsified if the file is existing and cannot be opened and used, for example if the permissions are not given to the coder.
+
+If we want to _append_ the content of a ostream to an existing file, one should write
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+ofstream out_stream ("myfile",ios::app);
+
+//or equivalently
+
+ofstream o_stream;
+
+o_stream.open("myfile",ios::app);
+#+END_SRC
+
+*** ostringstream
+Instead, the type ostringstream is automatically opened when declared, there is no need to use /str/ in this case.
+One could in priniple open a ostringstream and initialize it at the same time, but one has to be carefaul about overwriting.
+One could use the option /ostringtstream out_stream ("abcde",ios::ate)/ where ate stays for _at the end_ and therefore will append new stream input.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <sstream>
+using namespace std;
+
+void funza(const char *x, const char *y){
+    cout<< "If I call funza(const char *, const char *), I get\n",
+        cout<< x << '\n'<< y << '\n';
+}
+
+void funza(ostringstream &x, ostringstream &y){
+    cout<< "If I call funza(ostringstream&, ostringstream&), I get\n",
+        cout<< x.str().data() << '\n'
+        << y.str().data() << '\n';
+}
+
+int main(){
+    //I declare to ostream objects, one with ios::ate option
+    ostringstream
+        ossA("abcde", ios_base::ate),
+        ossB("abcde");
+
+    ossA << 'A'; // This will be appended
+    ossB << 'A'; // This will overwrite 'a'
+
+// To recover the content of these ostringstreams
+// one can use the method data(), which is in the type returned by str()
+// data() return a pointer to const char
+// which should be used STRAIGH AWAY
+//Now I assign the value of these pointers to new pointers defined in main
+const char *a = ossA.str().data(), *b = ossB.str().data();
+
+
+// In fact, I can now print the various pointers
+//And I immediately see there is a difference (which should not be there)
+funza(ossA, ossB);
+funza(a, b);
+}
+#+END_SRC
+
+#+RESULTS:
+: If I call funza(ostringstream&, ostringstream&), I get
+: abcdeA
+: Abcde
+: If I call funza(const char *, const char *), I get
+: Abcde
+: Abcde
+
+The problem of the previous code is related to the fact that there are TWO dot operators in the same expressions, and this has to do with rvalues and references to rvalues.
+
+** Writing in output streams
+There are the analogues of seekg and tellg, which are seekp and tellp which do exactly the same thing, but they tell information on the writing index.
+There is also the method /eof()/, which turns always false as there is no end of file in outputs.
+Opposite for the method /open/ there is the method /close()/, which can only be used for ofstreams.
+There is no analogue of ignore, getline, gcount and peek.
+There is an analogue of get(), which is /put()/ which taks _one_ char as argumenta nd will append that character to the ostream.
+**** write()
+This is the analogue of read(), and it is used to write binary files.
+**** <<
+This is the insertion operator for textual streams and it is usable by all native types.
+As an example, see this code
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <cmath>
+using namespace std;
+
+int main(){
+    cout<< "This code writes 31 values of common elementary functions of a variable\n equidistributed in the range [1,2]\n\n"
+        "x sin(x) cos(x) tan(x) "
+        "log(x) exp(x) x^0.5\n\n";
+
+    for(int i = 0; i <= 30; ++i){
+        double x = i/30.0 + 1.0;
+        cout
+            << x << ' '
+            << sin(x) << ' '
+            << cos(x) << ' '
+            << tan(x) << ' '
+            << log(x) << ' '
+            << exp(x) << ' '
+            << sqrt(x) << '\n';
+    }
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+This code writes 31 values of common elementary functions of a variable
+ equidistributed in the range [1,2]
+
+x sin(x) cos(x) tan(x) log(x) exp(x) x^0.5
+
+1 0.841471 0.540302 1.55741 0 2.71828 1
+1.03333 0.85901 0.511958 1.67789 0.0327898 2.81042 1.01653
+1.06667 0.875595 0.483046 1.81266 0.0645385 2.90568 1.0328
+1.1 0.891207 0.453596 1.96476 0.0953102 3.00417 1.04881
+1.13333 0.905829 0.423643 2.13819 0.125163 3.10599 1.06458
+1.16667 0.919445 0.393219 2.33825 0.154151 3.21127 1.08012
+1.2 0.932039 0.362358 2.57215 0.182322 3.32012 1.09545
+1.23333 0.943598 0.331094 2.84994 0.209721 3.43265 1.11056
+1.26667 0.954108 0.299463 3.18606 0.236389 3.549 1.12546
+1.3 0.963558 0.267499 3.6021 0.262364 3.6693 1.14018
+1.33333 0.971938 0.235238 4.13173 0.287682 3.79367 1.1547
+1.36667 0.979238 0.202715 4.83061 0.312375 3.92225 1.16905
+1.4 0.98545 0.169967 5.79788 0.336472 4.0552 1.18322
+1.43333 0.990567 0.13703 7.22881 0.360003 4.19265 1.19722
+1.46667 0.994583 0.103942 9.56868 0.382992 4.33476 1.21106
+1.5 0.997495 0.0707372 14.1014 0.405465 4.48169 1.22474
+1.53333 0.999298 0.0374542 26.6805 0.427444 4.6336 1.23828
+1.56667 0.999991 0.00412965 242.149 0.44895 4.79065 1.25167
+1.6 0.999574 -0.0291995 -34.2325 0.470004 4.95303 1.26491
+1.63333 0.998045 -0.0624963 -15.9697 0.490623 5.12092 1.27802
+1.66667 0.995408 -0.0957235 -10.3988 0.510826 5.29449 1.29099
+1.7 0.991665 -0.128844 -7.6966 0.530628 5.47395 1.30384
+1.73333 0.98682 -0.161822 -6.09817 0.550046 5.65949 1.31656
+1.76667 0.980879 -0.19462 -5.03996 0.569095 5.85132 1.32916
+1.8 0.973848 -0.227202 -4.28626 0.587787 6.04965 1.34164
+1.83333 0.965735 -0.259531 -3.72107 0.606136 6.2547 1.35401
+1.86667 0.956549 -0.291572 -3.28066 0.624154 6.4667 1.36626
+1.9 0.9463 -0.32329 -2.9271 0.641854 6.68589 1.3784
+1.93333 0.935 -0.354647 -2.63642 0.659246 6.91251 1.39044
+1.96667 0.922661 -0.385611 -2.39272 0.67634 7.14681 1.40238
+2 0.909297 -0.416147 -2.18504 0.693147 7.38906 1.41421
+#+end_example
+
+One can use output manipulators to make output look nicer
+- /<<setw(n)/ : tells the output that whatever come _after it_ should at least occupy n bytes. The value that comes after will be _flushed to the right_. If the value that come after is longer, the nice display is lost
+- /<<fixed/  is used to force the output to display all zeros after the comma.
+- /setprecision(n)/ is used to set how many decimal digit to use after the comma, with rounding on the last digit.
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+# include <iostream>
+# include <iomanip> //This is where output manipulators are
+# include <cmath>
+using namespace std;
+
+int main(){
+
+    cout<< "This code writes 31 values of common elementary functions of a variable\n equidistributed in the range [1,2]\n\n"
+        "x sin(x) cos(x) tan(x) "
+        "log(x) exp(x) x^0.5\n\n";
+"x"
+" "
+" "
+" "
+" "
+" "
+" "
+" "
+"sin(x)"
+" "
+" "
+" "
+" "
+" "
+"cos(x)"
+" "
+" "
+" "
+" "
+" "
+"tan(x)"
+" "
+" "
+" "
+" "
+"log(x)"
+" "
+" "
+" "
+" "
+"exp(x)"
+" "
+" "
+" "
+" "
+"x^0.5\n\n";
+for(int i = 0; i <= 30; ++i){
+    double x = i/30.0 + 1.0;
+cout << setprecision(3) << fixed
+<< x << setprecision(5)
+<< setw(10) << sin(x)
+<< setw(10) << cos(x)
+<< setw(11) << tan(x)
+<< setw(10) << log(x)
+<< setw(10) << exp(x)
+<< setw(10) << sqrt(x) << '\n';
+}
+}
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+This code writes 31 values of common elementary functions of a variable
+ equidistributed in the range [1,2]
+
+x sin(x) cos(x) tan(x) log(x) exp(x) x^0.5
+
+1.000   0.84147   0.54030    1.55741   0.00000   2.71828   1.00000
+1.033   0.85901   0.51196    1.67789   0.03279   2.81042   1.01653
+1.067   0.87560   0.48305    1.81266   0.06454   2.90568   1.03280
+1.100   0.89121   0.45360    1.96476   0.09531   3.00417   1.04881
+1.133   0.90583   0.42364    2.13819   0.12516   3.10599   1.06458
+1.167   0.91944   0.39322    2.33825   0.15415   3.21127   1.08012
+1.200   0.93204   0.36236    2.57215   0.18232   3.32012   1.09545
+1.233   0.94360   0.33109    2.84994   0.20972   3.43265   1.11056
+1.267   0.95411   0.29946    3.18606   0.23639   3.54900   1.12546
+1.300   0.96356   0.26750    3.60210   0.26236   3.66930   1.14018
+1.333   0.97194   0.23524    4.13173   0.28768   3.79367   1.15470
+1.367   0.97924   0.20271    4.83061   0.31237   3.92225   1.16905
+1.400   0.98545   0.16997    5.79788   0.33647   4.05520   1.18322
+1.433   0.99057   0.13703    7.22881   0.36000   4.19265   1.19722
+1.467   0.99458   0.10394    9.56868   0.38299   4.33476   1.21106
+1.500   0.99749   0.07074   14.10142   0.40547   4.48169   1.22474
+1.533   0.99930   0.03745   26.68052   0.42744   4.63360   1.23828
+1.567   0.99999   0.00413  242.14930   0.44895   4.79065   1.25167
+1.600   0.99957  -0.02920  -34.23253   0.47000   4.95303   1.26491
+1.633   0.99805  -0.06250  -15.96968   0.49062   5.12092   1.27802
+1.667   0.99541  -0.09572  -10.39878   0.51083   5.29449   1.29099
+1.700   0.99166  -0.12884   -7.69660   0.53063   5.47395   1.30384
+1.733   0.98682  -0.16182   -6.09817   0.55005   5.65949   1.31656
+1.767   0.98088  -0.19462   -5.03996   0.56909   5.85132   1.32916
+1.800   0.97385  -0.22720   -4.28626   0.58779   6.04965   1.34164
+1.833   0.96573  -0.25953   -3.72107   0.60614   6.25470   1.35401
+1.867   0.95655  -0.29157   -3.28066   0.62415   6.46670   1.36626
+1.900   0.94630  -0.32329   -2.92710   0.64185   6.68589   1.37840
+1.933   0.93500  -0.35465   -2.63642   0.65925   6.91251   1.39044
+1.967   0.92266  -0.38561   -2.39272   0.67634   7.14681   1.40238
+2.000   0.90930  -0.41615   -2.18504   0.69315   7.38906   1.41421
+#+end_example
+
+* Bidirectional strams
+There are streams that can hold input at output at the same time and so everyhting that was said above still holds, as for example the text editor.
+The are defined as follows
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+fstream disk_stream;
+
+stringstream memory_stream;
+#+END_SRC
+
+*** Initialization of a fstream
+
+1. As reading only
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+    f.open("myfile",ios::in);
+
+   //Equivalent to reading only
+   ifstream f("myfile");
+   #+END_SRC
+
+2. As writing only
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+   f.open("myfile",ios::out);
+
+   //Equivalent to writing only
+   ofstream f("myfile");
+   #+END_SRC
+
+3. If we want to use the power of bidirectional i/o we can do
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+   f.open("myfile",ios::in | ios::out);
+   #+END_SRC
+   Clearly now the file _must exist when called_. Otherwide _failbit_ is called.
+
+4. Here
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+   f.open("myfile",ios::in | ios::out | ios::trunc);
+   #+END_SRC
+   This is as above, with the addition that the content of the file is _ereased_. This implies that the method also works if the file is _non existing_.
+
+5. Here
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+   f.open("myfile",ios::in | ios::out | ios::app);
+   #+END_SRC
+   This is as above, but the reading index is at the _beginnign of the file_ while the writing index _is at the end_ so new text will be appended.
+
+6. Here
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   ftream f;
+   f.open("myfile",ios::in | ios::out | ios::ate);
+   #+END_SRC
+   This is as above, with the addition that both indices are placed _at the end of the file_.
+
+*** Initialization of a stringstream
+The only difference is that one has to initialize _at declaration_.
+1. In stream
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   stringstream s("abcdefg", ios :: in);
+   //same as
+   istringstream s("abcdefg");
+   //or
+   istringstream s;
+   s.str("abcdefg");
+   #+END_SRC
+
+2. Out stream
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   stringstream s("", ios :: out);
+   //same as
+   ostringstream s;
+   #+END_SRC
+
+3. Real bidirectional stream
+   #+Begin_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   stringstream s("abcdefg", ios :: in | ios::out);
+   //same as
+   stringstream s.str("abcdefg");
+   #+END_SRC
+
+Remember that ios::trunc is irrelevant for stringstream objects (so no point 4) and that ios::app and ios::ate are equivalent.
+
+All methods like seekg,tellg,seekp,tellp are all still valid here.
+**** TODO putback(char)
+This is a method that can be used for ifstream, isdtrignstream, fstream, stringstream. It re-insert the char c in the input stream, so that the next byte extracted will be c.
+
+- If putback() is called by a disk stream (ifstream or fstream)
+  #+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+   # include <iostream>
+   # include <fstream>
+   # include <cstdlib>
+   using namespace std;
+
+   int main(){
+       //I create a new file called my_file containing "abcde"
+       //Try to compile using "abade"
+       system("echo abcde > myfile");
+
+       //I open a i/o stream
+       fstream is("myfile", ios :: in | ios :: out);
+
+       char c, d = 0;
+
+       streampos s;
+
+       is.get(c);
+
+       clog<< "After get() we are at byte "<< is.tellg()<< " with c = " << c<< '\n';
+
+       //Now we move of 2 bytes alonge the stream
+       is.seekg(2, ios::cur);
+
+       clog<< "After seekg I am at byte " << (s=is.tellg()) << '\n';
+
+       //Now we see what putback does
+       is.putback(c);
+
+       if(is && is.good())
+           clog << "It seems everything is fine... ";
+
+       //Check where the reading index is
+       if(is.tellg() >= s) {
+           cerr << "ERROR! \n";
+           return 222;
+       }
+       cout
+           << "\nAfter putback we are at byte "
+           << is . tellg(  );
+       cout << "and the next extracted character will be ["
+            << (char)(d = is.get(  )) << "]\n";
+   }
+  #+END_SRC
+
+  #+RESULTS:
