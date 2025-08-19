@@ -3,3 +3,54 @@
 There are two ways to work with them
 1. C style : strings as arrays of characters
 2. C++ style : uses /std::string/ which is safer
+
+** C-style strings
+They must end with the NUL character \0
+All functions that one needs to operate with C strings are in the header <cstring>
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+char* copyString(const char* str){
+    //char* result = new char[strlen(str)]; this is wrong!
+
+    char* result = new char[strlen(str)+1]; //Because I need to take the space for the NUL character
+
+    strcpy(result, str); //This is a C-string function
+    return result;
+}
+#+END_SRC
+
+strings can be *concatenated*:
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+char* appendStrings(const char* str1, const char* str2, const char* str3){
+    char* result = new char[strlen(str1) + strlen(str2) + strlen(str3) + 1];
+    strcpy(result, str1);
+    strcat(result, str2);
+    strcat(result, str3);
+    return result;
+}
+#+END_SRC
+
+** string literals
+A string literal is defined using "..."
+It is stored in a read-only part of the memory so that the compiler does not need to create many istances: this is called _literal pooling_. Because of this, _it is dangerous to assign string literals to variables_. Formally speaking they are array of n const char, but one can assign it to array of char without specifying the const. This means that STRING LITERALS CANNOT BE CHANGED!
+
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++20" :cmdline "-o prog" :classname main
+#include <print>
+using namespace std;
+
+int main() {
+    char* ptr = "hello";
+    ptr[1] = a;
+}
+#+END_SRC
+
+#+RESULTS:ISO C++ forbids converting a string constant to ‘char*’
+
+A solution to this problem is to define a static array -- this will enforce the compiler to allocat memory, then you can reassign the value.
+*** raw string literals
+They are defined as follows
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+const char* str = R"(Hello "World"!)";
+#+END_SRC
+They are useful when you need to write multiple lines. Everything in the bracket _is literal_ meaning that it will be read as a character (even \t and \n).
+
+** the /std::string/ class
