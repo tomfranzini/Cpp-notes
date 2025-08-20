@@ -1,0 +1,369 @@
+#+title: Overload Operators
+* Operator overload
+We now want to create new behaviours for operation between types whic are not natives.
+Not define new operators, which is impossible, but _creating new behaviours for known operators_, which in fact will retain their _precedence rules_.
+
+This is done by defining a function, whose arguments are the operand(s) of the operator, and using the dictionary word /operator/.
+
+For example we might want to define a sum of /physics_student/ and an int.
+#+BEGIN_SRC C++
+int operator+ (int n, physics_student phystud){
+int something_to_return;
+
+//stuff....
+
+return  something_to_return;
+}
+#+END_SRC
+
+1. This function will be called _every time_ the compiler will find an expression of the form  /[int] + [physics_student]/, where physic_student is on the _right_ of the operand and int is on the left. This function _must be defined *before* any occurrency of that operation_. If the order of these operands is swapped, _the compiler will give error_, unless another version of this function is defined with arguments swapped.
+2. The name of the function is in fact /operator+/ and it could also be used _as a function_, and called with that name.
+3. One has to be careful about precedences, which are not changed! For example:
+   - /int n = int1 + int2 + mystud;/ //VALID OPERATION
+   - /int n = int1 + mystud + int2;/ //VALID OPERATION
+   - /int n = mystud + int1 + int2;/ //NOT VALID: stud cannot be on the left
+   - /int n = int1 + mystud1 + mystud2;/ //VALID OPERATION
+   - /int n = int1*int2 + mystud;/ //VALID OPERATION
+   - /int n = mystud + int1*int2;/ //NOT VALID: stud cannot be on the left
+   - /int n = int1 + mystud*int2;/ //NOT VALID: * not defined for physics_student
+   - /int n = int1*(int2 + mystud);/ //VALID OPERATION
+   - ...
+4. When the overload of an operator is defined, the class it refers to has to be already declared _and_ defined.
+5. If the operator needs to access non public member of a class, then the definition (not declaratin) of the overloading function on the operator _has to be done inside the class_ with the vocabulary word /friend/. This _will not pass to derived classes_ and therefore the definitionmust be repeated (if needed)!
+6. _ANY_ function can be made /friend/ of a class. This means that it has access to the argument of a class, even if the arguments are not of that type.
+
+An /operator/ function can also be made as a memebr of a class.
+In this case, there is no need to write the argument that _is of the type of the class we are in_. For binary operations, this is by default the LEFT operator.
+
+*** An example
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++23" :cmdline "-o prog" :classname main
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+//I define the class MDouble and all operations.
+//It is the same as double, but with a save division by 0 and percentage operator.
+class MDouble{
+    bool error;
+    double d;
+
+    public:
+        //Redefinition of the operations Double +,-,*,/
+        MDouble operator+(double s){
+            MDouble r = d;
+            r.d += s;
+            return r;
+        }
+
+        MDouble operator-(double s){
+            MDouble r = d;
+            r.d -= s;
+            return r;
+        }
+
+        MDouble operator*(double s){
+            MDouble r = d;
+            r.d *= s;
+            return r;
+        }
+
+        MDouble operator/(double s){
+            MDouble r = d;
+            r.error = s == 0.0;
+            if(!r.error) r.d/=s;
+            return r;
+        }
+
+
+        //Unary operators
+        MDouble operator-(){
+            d *= -1.0;
+            return *this;
+        }
+
+        MDouble operator+(){
+            return *this;
+        }
+
+
+        //Other operations between Doubles
+        //Here this refers to the first argument
+        MDouble operator+(MDouble d){
+            MDouble r = this->d;
+            r.d += d.d;
+            return r;
+        }
+
+        MDouble operator-(MDouble d){
+            MDouble r = this->d;
+            r.d -= d.d;
+            return r;
+        }
+
+        MDouble operator*(MDouble d){
+            MDouble r = this->d;
+            r.d *= d.d;
+            return r;
+        }
+
+
+        MDouble operator/(MDouble d){
+            MDouble r = this->d;
+            r.error = d.d == 0.0;
+            if(!r.error) r.d /= d.d;
+            return r;
+        }
+
+
+        //Other operations double,Double only defined as friends
+        friend MDouble operator+(double, MDouble);
+        friend MDouble operator-(double, MDouble);
+        friend MDouble operator*(double, MDouble);
+
+
+        MDouble operator+=(double s){
+            d+=s;
+            return *this;
+        }
+
+        MDouble operator-=(double s){
+            d-=s;
+            return *this;
+        }
+
+       MDouble operator*=(double s){
+            d*=s;
+            return *this;
+        }
+
+        MDouble operator/=(double s){
+            error = s == 0.0;
+            if(!error) d/=s;
+            return *this;
+        }
+
+
+        MDouble operator+=(MDouble s){
+            d += s.d;
+            return *this;
+        }
+
+        MDouble operator-=(MDouble s){
+            d -= s.d;
+            return *this;
+        }
+
+        MDouble operator*=(MDouble s){
+            d *= s.d;
+            return *this;
+        }
+
+        MDouble operator/=(MDouble s){
+            error = s.d == 0.0;
+            if(!error) d/=s.d;
+            return *this;
+        }
+
+
+        friend double& operator+=(double&, MDouble);
+        friend double& operator-=(double&, MDouble);
+        friend double& operator*=(double&, MDouble);
+        friend double& operator/=(double&, MDouble);
+
+        double operator%(double d){
+            return d * this->d / 100.0;
+        }
+
+        double operator%(MDouble d){
+            return d.d * this->d / 100.0;
+        }
+
+        friend double operator%(double, MDouble);
+
+        //Output stream operators
+        friend ostream& operator<<(ostream &, MDouble);
+
+
+        //Math functions
+        friend MDouble exp(MDouble);
+
+        //Constructor
+         MDouble(double s) : d(s) {error = false;}
+
+       //Note that this functions returns the value of error and always RESET
+        // the value to be error=false!
+        bool ERROR(){
+            if(error) return !(error=false);
+            return error;
+        }
+
+
+        double Getd(){return d;}
+
+        //CASTING (MDouble argument is by default)
+        //Note the different syntax here
+        operator double(){return d;}
+
+};
+
+//Definition of friend functions OUTSIDE of the class
+
+MDouble operator+(double d, MDouble D){
+    MDouble r = d;
+    r.d += D.d;
+    return r;
+}
+
+ MDouble operator-(double d , MDouble D){
+     MDouble r = d;
+     r.d -= D.d;
+     return r;
+ }
+
+ MDouble operator*(double d , MDouble D){
+     MDouble r = d;
+     r.d *= D.d;
+     return r;
+ }
+
+double& operator+=(double &d, MDouble D){
+    d += D.d;
+    return d;
+}
+
+double& operator-=(double &d, MDouble D){
+    d -= D.d;
+    return d;
+}
+
+double& operator*=(double &d, MDouble D){
+    d *= D.d;
+    return d;
+}
+
+double& operator/=(double &d, MDouble D){
+    d /= D.d;
+    return d;
+}
+
+
+double operator % (double d, MDouble D){return D.d * d / 100.0;}
+
+ostream& operator<<(ostream &o, MDouble D){return o << D.d;}
+
+MDouble exp(MDouble x=1.0){MDouble r = 1.0; r.d = exp(x.d); return r;}
+
+
+int main(){
+    //This is the declaration+initialization of a POINTER TO A MEMBER OF A CLASS
+    double (MDouble::*d)() = &MDouble::Getd;
+
+
+    double rate = 2.0;
+    MDouble tot = 10.0;
+
+    cout << "I can use the pointer to member function \"d\""
+"\nto execute the function Getd and obtaining the private value of a variable of a Mdouble type, which is "
+<< (tot .* d)(  ) << '\n';
+
+
+cout<< "I can compute double + MDouble: "<< rate + tot << '\n';
+cout << "But also MDouble + double: "<< tot + rate << '\n';
+cout<< "And also MDouble + MDouble: "<< tot + MDouble(rate) << '\n';
+
+
+cout<< "Then I can compute the "<< rate << "% of " << tot
+    << "\neither as MDouble % double: "<< tot % rate << '\n';
+cout<< "or double % Double: "
+<< (double)tot % MDouble(rate) << '\n';
+cout
+<< "or as MDouble % MDouble: "<< tot  % MDouble(rate) << '\n';
+
+cout<< "I can check if the division works fine:\n";
+if((tot / 0.0) . ERROR( ))cout << "ERROR! Division by 0\n";
+if(!(tot /= 2.0) . ERROR( )) cout<< "However you can divide by 2: "<< tot << '\n';
+
+cout<< "I can also increment "<< tot << " by " << rate;
+cout<< " obtaining" << (tot += rate) << '\n';
+
+cout
+<< "And also increase " << rate << " by the incremented value of " << tot << " getting ";
+
+//Here the brackets are MANDATORY because << has precedence over +=!
+cout << (rate += tot) << '\n';
+
+cout << "I can apply the unary operator - to "<< tot << " getting ";
+cout << -tot << '\n';
+
+cout << "And increment with this the current value of "<< rate
+<< "\nworking with operator+= between MDoubles, obtaining ";
+cout << (rate = (double)(MDouble(rate) += tot)) << '\n';
+
+cout<< "Finally,  I can compute the exp of a MDouble "
+<< MDouble(rate) << " getting "
+<< exp(MDouble(rate)) << '\n'
+<< "and also write the Napier's number e: "
+<< exp() << '\n';
+}
+
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+I can use the pointer to member function "d"
+to execute the function Getd and obtaining the private value of a variable of a Mdouble type, which is 10
+I can compute double + MDouble: 12
+But also MDouble + double: 12
+And also MDouble + MDouble: 12
+Then I can compute the 2% of 10
+either as MDouble % double: 0.2
+or double % Double: 0.2
+or as MDouble % MDouble: 0.2
+I can check if the division works fine:
+ERROR! Division by 0
+However you can divide by 2: 5
+I can also increment 5 by 2 obtaining7
+And also increase 2 by the incremented value of 7 getting 9
+I can apply the unary operator - to 7 getting -7
+And increment with this the current value of 9
+working with operator+= between MDoubles, obtaining 2
+Finally,  I can compute the exp of a MDouble 2 getting 7.38906
+and also write the Napier's number e: 2.71828
+#+end_example
+
+Some comments
+- /friend/ is only used for functions which are _not_ memebr functions! For example overloads of operators or in this case also mathematical functions!
+- For binary operators, the left argument is _always_ reserved for the type of the class we are inside
+- for unary operators the only operand is of the type of the class we are in, and therefore it is _empty_
+- For member functions, the method d is always defined, even when the function is declared inside the class and then defined outside (see e.g. /MDouble operator+(double d, MDouble D)/)
+- every member function, which is _not static_ (i.e. is defined BEFORE the the class itself), has _for free_ a pointer to the object it is living in, which is called /this/.
+  For example in the code above
+  1. In the definition of the unary +,- operators, there is only one (implied) MDouble argument. The methid can use the attribute d of the class, chamge it accordingly, and then it will return *this, i.e. the object coherently updated (not just d, which is a double!)
+  2. In the binary operators with assignment, with the same logic
+  3. It appears in _member functions_ where the second argument has _the same name as the method_ d. In this case this-> refers to the first argument.
+- /friend/ functions, being defined outside of the class, cannot use the this pointer.
+- /static/ functions cannot use /this/ pointer becasue they exist _irrespective_ of the existance of any variable of that type.
+  For this reason, a /static/ member function can only use /static/ memebrs which are defined _a priori_. These functions are used to deal with _static_ members which are _not public_!
+- Note that the function opertator+=, which has a double as first argument, has to take that value as a reference. This because we want to be able to _increment it_. If we pass a simple variable, it will not have the power to change the value at the right address.
+- Note that when a constructor need _only one_ variable, it is enough to use =, as in /MDouble test = 2.0/. Of course the value on the right has to be the one the constructor is expecting (there might be more constructors in overload).
+  If we want to FORBID this behaviour, we need to put the word /explicit/ _before the constructor_.
+- The standard initialization in exp(Mdouble x=1.0) is _necessary_ because the class has no default constructor, so MDouble x only would not be able to construct _anything!_.
+  This is why, in the last line of the code we can call exp() _without arguments_. In fact the cmath::exp needs ONE argument. Since we put the standard value for x, it will call the function exp(1)=e.
+- The *casting overload* is a bit different.
+  There is no need to specify the type, since it is the name of the function itself.
+  Therefore we rite /operator /double(){/return d;};/
+
+**** Pointers to members
+The first line in main() is a pointer to memebr of a class.
+The sintax here is
+#+BEGIN_SRC C++
+double (MDouble::*d)() = &MDouble::Getd;
+#+END_SRC
+
+This specifically is a pointer to a member _without arguments_ which returns a double. For this reason we can immediately initialise using the _public_ method Getd (it has no arguments and returns a double), this is called *offset of the method*.
+In this context, the character /&/ is for create the offset and _not_ to return an address (in fact, the name of a function is _by itself_ the address of that function!).
+The point is that when this pointer is created _nothing of type MDouble exist and the method is not qualified as static_!
+
+The way /*d/ is defined is the same syntax as a poitner to function, with the only difference that we need to also put teh resolutor /MDouble::/. Even with this, the scope of this pointer is that of main, therefore _this_ d is no the same d appearing in the class MDouble!
+When we call it, we use the same syntax as a pointer member of the class, namely /.*d/, with the only difference that _here there are no spaces between . and the asterisk_. In this specific case, this is as a whole an operator. This means that _a pointer to a member is *very different* from a pointer member of a class_
+There is the analogue ->* which is another operator that can be used when on the left there is a pointer and not a variable.
