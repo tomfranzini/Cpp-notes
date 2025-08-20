@@ -4,6 +4,8 @@ These are personal notes on the **C++ programming language**.
 They are based on the course "Elementi di programmazione per la fisica", held at the University of Bologna during the 2014/2015 academic year.
 
 These notes are also partly inspired by "C++ Commedia", authored by Prof. Graziano Servizi.
+The website for the course module was previously available at http://www.physycom.unibo.it/labinfo/per_cominciare.php.
+Unfortunately, it is no longer online. To access its contents, one must now use a web archive service such as the Wayback Machine.
 
 ## Notes on the Standard
 
