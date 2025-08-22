@@ -1,6 +1,14 @@
 #+title: Templates
 * Templates
-There are templates for classes and functions. The declaration is the same, with the only addition
+There are templates for classes and functions, i.e. they can be used to "model" them.
+The idea is that we prepare a model for a class or a function, but without specifying some of the ingredients. The programmer will each time decide what to use as ingredients to create the object or the function.
+
+A template can be seen as a function where _the type itself_ of the variables is *itself a variable*, whose name is
+1. specified in the template list, with the word /typename/ or /class/
+2. specified by its standard values inside the list
+3. assigned in the moment such object or function is declared.
+
+The declaration is the same, with the only addition
 #+BEGIN_SRC C++
 template <list_of_template_parameters>
 #+END_SRC
@@ -35,254 +43,577 @@ Whenever these non-type should be called,
 3. For lvalue same as the point above
 4. pointers to members must be used with the syntax /&Class_they_belong::Member/
 
+**** templates and compiling
+The compiler will only _check_ the syntax of a template when the program runs.
+If the template is not used, teh compiler will _never create_ the binary for such class. It will create the binary of a template class only when an object of that class is created, and the template parameters are specified. It will create a new binary for the tamplate for _any_ different instance of template (with different parameters) we create.
 ** Some examples
 1. Easiest example
   #+BEGIN_SRC C++
   template <class X> class my_class {/*...*/};
+
+  //Now define a normal class
+  class testclass {};
+
+  int main(){
+      my_class<int> myel_int;
+      my_class<testclass> myel_test;
+      //my_class<0> myel_0;
+      //This is an ERROR because in my_class, <class X> is not a non-type!
+  }
+
   #+END_SRC
 
 2. Same as above + specialization
   #+BEGIN_SRC C++
-  template <class X> class my_class {/*...*/};
+  template <class X> class my_class {/*...*/}; //Base template
+  template < > class my_class<int> {/*...*/}; //Specialization template
 
-  template < > class my_class<int> {/*...*/};
+  //I can do the same things as above, and also I can do
+  int main(){
+      my_class<0> myel_0; //Now the specialization is used!
+  }
   #+END_SRC
 
 3. A definition with a longer list
    #+BEGIN_SRC C++
    template <class X, class Y, int Z> class my_class {/*...*/};
+
+   //I define additional normal classes
+   class C1{};
+   class C2{};
+
+   constexpr int i = 11;
+
+   int main(){
+      myclass<int, int, 0> el_int_int_0;
+      myclass <int, C1, 10> el_int_C1_10;
+      myclass <int, C1, 148> el_int_C1_148;
+      myclass <C2, C1, 132> el_C2_C1_132;
+      myclass <C2, int, 132> el_C2_int_132;
+
+      //The following is NOT allowed
+      // myclass <C1, int, int> el_C1_int_int;
+      //becasue Z is a NON-TYPE
+
+      //This is allowed using constexpr
+      myclass <C2,C1,static_cast<int>(sizeof(double))-i> myclass_C2_C1_constexpr;
+       }
    #+END_SRC
 
 4. Same as above + 2 _partial_ specializations
    #+BEGIN_SRC C++
-   template <class X, class Y, int Z> class my_class {/*...*/};
-   template <class X> class my_class<X,int,132> {/*...*/};
-   template <class X, class Y> class my_class<X,Y,148>{/*...*/};
+   template <class X, class Y, int Z> class my_class {/*...*/}; //BASE definition
+   template <class X> class my_class<X,int,132> {/*...*/}; //FIRST SPECIALIZATION
+   template <class X, class Y> class my_class<X,Y,148>{/*...*/}; //SECOND SPECIALIZATION
+
+   //I use the same main as above
+   class C1{};
+   class C2{};
+
+   constexpr int i = 11;
+
+   int main(){
+      myclass<int, int, 0> el_int_int_0; //Uses BASE definition
+      myclass <int, C1, 10> el_int_C1_10; //Uses BASE definition
+      myclass <int, C1, 148> el_int_C1_148; //Uses SECOND SPECIALIZATION
+      myclass <C2, C1, 132> el_C2_C1_132; //Uses BASE definition
+      myclass <C2, int, 132> el_C2_int_132; //Uses FIRST SPECIALIZATION
+
+      //The following is NOT allowed
+      // myclass <C1, int, int> el_C1_int_int;
+      //becasue Z is a NON-TYPE
+
+      //This is allowed using constexpr
+      myclass <C2,C1,static_cast<int>(sizeof(double))-i> myclass_C2_C1_constexpr; //Uses BASE definition
+       }
    #+END_SRC
 
 5. As above + standard values
    #+BEGIN_SRC C++
-   template <class X, class Y = int, int z=132> class my_class {/*...*/};
+   template <class X, class Y = int, int z=12> class my_class {/*...*/};
+
+   //Same as above, but now I can also add
+   int main(){
+       myclass<C1> el_C1; //Here Y is int and z=12
+       myclass<C1,C2> el_C1_C2; //here only z=12
+   }
    #+END_SRC
 
 6. A definition with a parameter pack
    #+BEGIN_SRC C++
   template <typename ... P> class my_class{/*...*/};
+
+   int main(){
+       myclass <> el_empty;
+       myclass<int> el_1_int;
+       myclass<double> el_1_double;
+       myclass<int,double> el_2_int_double;
+       myclass<double,int> el_2_double_int;
+       myclass<double, double, double, double> el_4_double;
+       //...
+       //However the following is WRONG
+       //myclass<0> el_wrong;
+   }
    #+END_SRC
 
 7. A definition with a template-template parameter with a standard value (optional)
    #+BEGIN_SRC C++
    template <class X> class my_class{/*...*/};
    template <template <typename> class Y = my_class > my_class_2 {/*...*/};
+
+   template <class AA> class Z {/*...*/};
+
+   int main(){
+       my_class_2 <> el_standard; //This is equivalent to my_class_2<my_class>
+       my_class_2 <Z> el_Z; //Overwrite the standard value
+   }
    #+END_SRC
 
 8. A template-template parameter doubly nested
    #+BEGIN_SRC C++
    template <template<typename> class X> class myclass {/*...*/};
    template <template<template<typename> class> class Z = myclass> class myclass2 {/*...*/};
+
+   template<template<class AA> class UU> class Z {/*...*/};
+
+   int main(){
+       myclass2 <> el_standard; //With standard argument
+       myclass2 <Z> el_Z; //Without standard argument
+   }
    #+END_SRC
 
-9. A template function
+9. Miscellaneous
+   #+BEGIN_SRC C++
+   template <int N, class A, class B=double, typename ... P> class myclass {/*...*/};
+
+   int main(){
+       myclass <1,int> el_standard;
+       myclass <1,int,float> el_nonstandard;
+       myclass <1,int,float,char,const char*> el_with_pack;
+       //The following is wrong
+       //myclass <int,float,char,const char*> el_wrong;
+       //Becasue in the first argument there is a type instead of a non-type
+
+       for (int i=0,i!=3,++i){
+           //myclass <i,intnfloat,char,const char*> el_notvalid
+           //becasue non-type is passed as a NON constexpr
+       }
+   }
+   #+END_SRC
+
+10. A template function
    #+BEGIN_SRC C++
    template <int N, class A, class B=double, typename ... P> A fun(A a, B b, P ... p){A r(a); /*...*/};
+
+   int main(){
+       const char* text = "text";
+
+       double x {1.5};
+       float z = {1.2f};
+
+       cout<<funz<0>(text,x)<<endl;
+       //this is funz<0,const char*,double>(text,x)
+
+       cout<<funz<10,float,const char*>(z,text,x)<<endl;
+       //this is funz<10,float,const char*,double> where A and B are passed explciitly and double is the single parameter of the pack
+       }
    #+END_SRC
 
+11. A weird template function
+    #+BEGIN_SRC C++
+    template <double* ptd, void(*ptf)(double, int), int (&ptF)(  )>
+    void funza(  ) {/*omissis*/}
+
+    double a[]{10.1,20.2,30.3};
+
+    void gunz(double d, int i){/*...*/};
+
+    int main(){
+        constexpr int (&ref)() = gunz;
+        funz<a,gunz,ref>();
+    }
+    #+END_SRC
+
+12. A template functions which has two consecutive packs
+    #+BEGIN_SRC C++
+    template <int N, template<class> class B,class A, int ... K, class ... Z> void funz(A a, B <A> b, Z...z){
+        std::cout << sizeof...(K) << ' ' << sizeof...(Z) << std::endl;
+        int x[ ]{1, (std::cout << z << '(' << sizeof(z)<< ") ", 0)...};
+        int y[ ]{1, (std::cout << K << ' ', 0)...};
+        std::cout << std::endl;
+        for(int u:x) std::cout << u << ' '; std::cout << '\n';
+        for(int u:y) std::cout << u << ' '; std::cout << '\n';
+    }
+
+    template <typename A> class myclass{};
+
+    int main(){
+        myclass<int> el;
+        funz<5,myclass>(1,el); //Correc
+        //Here 5 is assigned to N, B is relised with myclass
+        //A is DEDUCED by the first argument and it is an int and both packs are empty
+
+        funz<8>(1,myclass); //Correct
+        //N is 8, A is int, B is myclass, empty packs
+
+        funz<10,myclass,int,2,3,4>(2,el,1.3,'a',1.f); //correct
+        //N is 10, A is int, B is myclass: no deduction needed here
+        //2,3,4 are in the first pack K of ints
+        //pack Z is deduced and contains double,char,float
+
+        funz<10,myclass,int,2,3,4,double,char,float>(2,el,1.3,'a',1.f);//WRONG
+        //This is wrong because the pack K will EAT all arguments after 4.
+        //We need a way to tell the compiler when the first pack ends
+    }
+    #+END_SRC
 
 
-
-
-
-
-
-
-** Introduction
-The idea is that we now would like to create a class that does not really depend on specific choice of types, but really is always valid whatever the type we need.
+** A longer example
+As said above, the idea is that we now would like to create a class that does not really depend on specific choice of types, but really is always valid whatever the type we need.
 For example, in [[file:overload_operators.org][overload of operators]] we have constructed a class MDouble, which is the analogue of double, but with some additional feature. What if we need to do the same for floats, long double,...? This is what templates are good for.
 
-For example, this code has the exact same output of the one in that document, but it does not depend on the specific type.
-#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++11" :cmdline "-o prog" :classname main
+#+BEGIN_SRC C++ :results output :exports both :flags "-std=c++17" :cmdline "-o prog" :classname main
 #include <iostream>
 #include <cmath>
 using namespace std;
 
-template <class XXX>
-class Double
-{bool errore;
-XXX d;
-public:
+//We define a template class
+//This "depends" on the template object XXX
+template <class XXX> class MDouble{
+    bool error;
+    XXX d; //The type will be "decided" once we specify what XXX is (in main)
 
-Double<XXX> operator+(XXX s)
-{Double<XXX> r = d; r.d += s; return r;}
+    public:
 
-Double<XXX> operator/(XXX s)
-{Double<XXX> r = d;
-r.errore = s == 0.0;
-if(!r.errore) r.d/=s;
-return r;}
+        //This is a template function which uses the XXX template parameter
+        MDouble<XXX> operator+(XXX s){
+            MDouble<XXX> r = d; //Each time I use the class MDouble, I need to specify the template parameter XXX
+            r.d += s;
+            return r;
+        }
 
-Double<XXX> operator-( )
-{d *= -1.0; return *this;}
-Double<XXX> operator+( )
-{return *this;}
+        MDouble<XXX> operator/(XXX s){
+            MDouble<XXX> r = d;
+            r.error = s == 0.0;
+            if(!r.error) r.d/=s;
+            return r;
+        }
 
-Double<XXX> operator+(Double<XXX> d)
-{Double<XXX> r = this->d; r.d += d.d; return r;}
+        MDouble<XXX> operator-( ){
+            d *= -1.0; return *this;}
 
-Double<XXX> operator/(Double<XXX> d)
-{Double<XXX> r = this->d;
-r.errore = d.d == 0.0;
-if(!r.errore) r.d /= d.d;
-return r;}
+        MDouble<XXX> operator+( ){
+            return *this;}
 
-template <typename YYY> friend Double<YYY> operator+(YYY, Double<YYY>);
+        MDouble<XXX> operator+(MDouble<XXX> d){
+            MDouble<XXX> r = this->d;
+            r.d += d.d;
+            return r;
+        }
 
-Double<XXX> operator+=(XXX s)
-{d+=s; return *this;}
+        MDouble<XXX> operator/(MDouble<XXX> d){
+            MDouble<XXX> r = this->d;
+            r.error = d.d == 0.0;
+            if(!r.error) r.d /= d.d;
+            return r;
+        }
 
-Double<XXX> operator/=(XXX s)
-{errore = s == 0.0;
-if(!errore) d/=s;
-return *this;}
+        //Template function with the attribute friend!
+        template <typename YYY> friend MDouble<YYY> operator+(YYY, MDouble<YYY>);
 
-Double<XXX> operator+=(Double<XXX> s)
-{d += s.d; return *this;}
+        MDouble<XXX> operator+=(XXX s){
+            d+=s;
+            return *this;
+        }
 
-Double<XXX> operator/=(Double<XXX> s)
-{errore = s.d == 0.0;
-if(!errore) d/=s.d;
-return *this;}
+        MDouble<XXX> operator/=(XXX s){
+            error = s == 0.0;
+            if(!error) d/=s;
+            return *this;
+        }
 
-template <class YYY> friend YYY& operator+=(YYY&, Double<YYY>);
+        MDouble<XXX> operator+=(MDouble<XXX> s){
+            d += s.d;
+            return *this;
+        }
 
-XXX operator%(XXX d)
-{return d * this->d / 100.0;}
+        MDouble<XXX> operator/=(MDouble<XXX> s){
+            error = s.d == 0.0;
+            if(!error) d/=s.d;
+            return *this;
+        }
 
-XXX operator%(Double<XXX> d)
-{return d.d * this->d / 100.0;}
+        //Template function that returns a reference to YYY
+        template <class YYY> friend YYY& operator+=(YYY&, MDouble<YYY>);
 
-template <class YYY> friend YYY operator%(YYY, Double<YYY>);
+        XXX operator%(XXX d){
+            return d * this->d / 100.0;
+        }
 
-template <class YYY> friend ostream& operator<<(ostream &, Double<YYY>);
+        XXX operator%(MDouble<XXX> d){
+            return d.d * this->d / 100.0;
+        }
 
-template <class YYY> friend YYY exp(YYY);
+        template <class YYY> friend YYY operator%(YYY, MDouble<YYY>);
 
-Double(XXX s) : d(s) {errore = false;}
+        template <class YYY> friend ostream& operator<<(ostream &, MDouble<YYY>);
 
-bool Errato( )
-{if(errore) return !(errore=false);
-return errore;}
+        template <class YYY> friend YYY exp(YYY);
 
-XXX rendi( )
-{return d;}
+        MDouble(XXX s) : d(s) {error = false;}
 
-operator XXX( )
-{return d;}
-}; // fine della definizione della classe (completata)
+        bool ERROR( ){
+            if(error) return !(error=false);
+            return error;
+        }
 
-// definizione delle funzioni friend (FUORI dalla classe!)
+        XXX Getd( ){return d;}
 
-template <typename XXX>
-Double<XXX> operator+(XXX d, Double<XXX> D)
-{Double<XXX> r = d; r.d += D.d; return r;}
-template <typename XXX>
-XXX& operator+=(XXX &d, Double<XXX> D)
-{d += D.d; return d;}
-template <typename XXX>
-XXX operator % (XXX d, Double<XXX> D)
-{return D.d * d / 100.0;}
-template <typename XXX>
-ostream& operator<<(ostream &o, Double<XXX> D)
-{return o << D.d;}
-template <typename XXX>
-XXX exp(XXX x)
-{XXX r = 1.0; r.d = exp(x.d); return r;}
+        operator XXX(){return d;}
+};
 
-int main( )
-{
-using T = double;
-using D = Double<T>;
-T tasso = 12.8, zero = 0, due = 2, uno = 1;
-D quota = 34567.789;
-T (D::*d)(  ) = &D::rendi;
-cout << "posso usare il puntatore a funzione membro \"d\""
-"\nper eseguire la funzione rendi e ottenere il valore della"
-"\nvariabile privata di un oggetto Double che risulta "
-<< (quota .* d)(  ) << '\n';
-cout
-<< "posso eseguire double + Double: "
-<< tasso + quota << '\n';
-cout
-<< "ma anche Double + double: "
-<< quota + tasso << '\n';
-cout
-<< "e financo Double + Double: "
-<< quota + D(tasso) << '\n';
-cout
-<< "poi posso calcolare il "
-<< tasso << "% di " << quota
-<< "\nsia come Double % double: "
-<< quota % tasso << '\n';
-cout
-<< "sia come double % Double: "
-<< (T)quota % D(tasso) << '\n';
-cout
-<< "sia come Double % Double: "
-<< quota % D(tasso) << '\n';
-cout
-<< "Posso constatare se funziona la divisione\n";
-if((quota / zero) . Errato( ))
-cerr << "PIRLA! non si divide per 0\n";
-if(!(quota /= due) . Errato( ))
-cout
-<< "per 2 invece puoi: "
-<< quota << '\n';
-cout
-<< "Posso anche incrementare "
-<< quota << " di " << tasso;
-cout
-<< " ottenendo " << (quota += tasso) << '\n';
-cout
-<< "e anche incrementare " << tasso
-<< " del valore incrementato di " << quota
-<< " ottenendo "; cout << (tasso += quota) << '\n';
-cout
-<< "posso applicare il - unario a "
-<< quota << " ottenendo ";
-cout << -quota << '\n';
-cout
-<< "e incrementare con questo il valore attuale di "
-<< tasso
-<< "\nlavorando con operator+= tra due Double, e ottenendo ";
-cout
-<< (tasso = (T)(D(tasso) += quota)) << '\n';
-cout
-<< "infine posso calcolare l'esponenziale di un Double come "
-<< D(tasso) << " ottenendo "
-<< exp(D(tasso)) << '\n'
-<< "e anche scrivere il valore del numero di Nepero che è "
-<< exp(D(uno)) << '\n';
+
+template <typename XXX> MDouble<XXX> operator+(XXX d, MDouble<XXX> D){
+    MDouble<XXX> r = d;
+    r.d += D.d;
+    return r;
+}
+
+template <typename XXX> XXX& operator+=(XXX &d, MDouble<XXX> D){
+    d += D.d;
+    return d;
+}
+
+template <typename XXX> XXX operator % (XXX d, MDouble<XXX> D){
+    return D.d * d / 100.0;
+}
+
+template <typename XXX> ostream& operator<<(ostream &o, MDouble<XXX> D){
+    return o << D.d;
+}
+
+template <typename XXX> XXX exp(XXX x){
+    XXX r = 1.0;
+    r.d = exp(x.d);
+    return r;
+}
+
+int main( ){
+
+    //I am creating aliases for double and MDouble<double>
+    using T = double;
+    using D = MDouble<T>;
+
+
+    T rate = 12.8, zero = 0, two = 2, one = 1;
+    D tot = 34567.789;
+
+    T (D::*d)(  ) = &D::Getd;
+    cout << "I can use the pointer to member function \"d\""
+        "\nto execute the function Getd and obtaining the private value of a variable of a Mdouble type, which is "
+         << (tot .* d)(  ) << '\n';
+
+
+    cout<< "I can compute double + MDouble: "<< rate + tot << '\n';
+    cout << "But also MDouble + double: "<< tot + rate << '\n';
+    cout<< "And also MDouble + MDouble: "<< tot + D(rate) << '\n';
+
+
+    cout<< "Then I can compute the "<< rate << "% of " << tot
+        << "\neither as MDouble % double: "<< tot % rate << '\n';
+    cout<< "or double % Double: "
+        << (T)tot % D(rate) << '\n';
+    cout
+        << "or as MDouble % MDouble: "<< tot  % D(rate) << '\n';
+
+    cout<< "I can check if the division works fine:\n";
+    if((tot /zero) . ERROR( ))cout << "ERROR! Division by 0\n";
+    if(!(tot /= two) . ERROR( )) cout<< "However you can divide by 2: "<< tot << '\n';
+
+    cout<< "I can also increment "<< tot << " by " << rate;
+    cout<< " obtaining" << (tot += rate) << '\n';
+
+    cout
+        << "And also increase " << rate << " by the incremented value of " << tot << " getting ";
+
+//Here the brackets are MANDATORY because << has precedence over +=!
+    cout << (rate += tot) << '\n';
+
+    cout << "I can apply the unary operator - to "<< tot << " getting ";
+    cout << -tot << '\n';
+
+    cout << "And increment with this the current value of "<< rate
+         << "\nworking with operator+= between MDoubles, obtaining ";
+    cout << (rate = (T)(D(rate) += tot)) << '\n';
+
+    cout<< "Finally,  I can compute the exp of a MDouble "
+        << D(rate) << " getting "
+        << exp(D(rate)) << '\n'
+        << "and also write the Napier's number e: "
+        << exp(one) << '\n';
 }
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-posso usare il puntatore a funzione membro "d"
-per eseguire la funzione rendi e ottenere il valore della
-variabile privata di un oggetto Double che risulta 34567.8
-posso eseguire double + Double: 34580.6
-ma anche Double + double: 34580.6
-e financo Double + Double: 34580.6
-poi posso calcolare il 12.8% di 34567.8
-sia come Double % double: 4424.68
-sia come double % Double: 4424.68
-sia come Double % Double: 4424.68
-Posso constatare se funziona la divisione
-per 2 invece puoi: 17283.9
-Posso anche incrementare 17283.9 di 12.8 ottenendo 17296.7
-e anche incrementare 12.8 del valore incrementato di 17296.7 ottenendo 17309.5
-posso applicare il - unario a 17296.7 ottenendo -17296.7
-e incrementare con questo il valore attuale di 17309.5
-lavorando con operator+= tra due Double, e ottenendo 12.8
-infine posso calcolare l'esponenziale di un Double come 12.8 ottenendo 362217
-e anche scrivere il valore del numero di Nepero che è 2.71828
+I can use the pointer to member function "d"
+to execute the function Getd and obtaining the private value of a variable of a Mdouble type, which is 34567.8
+I can compute double + MDouble: 34580.6
+But also MDouble + double: 34580.6
+And also MDouble + MDouble: 34580.6
+Then I can compute the 12.8% of 34567.8
+either as MDouble % double: 4424.68
+or double % Double: 4424.68
+or as MDouble % MDouble: 4424.68
+I can check if the division works fine:
+ERROR! Division by 0
+However you can divide by 2: 17283.9
+I can also increment 17283.9 by 12.8 obtaining17296.7
+And also increase 12.8 by the incremented value of 17296.7 getting 17309.5
+I can apply the unary operator - to 17296.7 getting -17296.7
+And increment with this the current value of 17309.5
+working with operator+= between MDoubles, obtaining 12.8
+Finally,  I can compute the exp of a MDouble 12.8 getting 362217
+and also write the Napier's number e: 2.71828
 #+end_example
+
+*** The problem of /dependent names/
+These are names that _depend_ on some of the template parameters. For example
+#+BEGIN_SRC C++
+template <class X> void funz(){
+    X::x * x;
+}
+#+END_SRC
+Here /X::x/ is a name that depends on the template parameter X and it will assume different meaning depending on hwo funx is called.
+
+For example,
+#+BEGIN_SRC C++
+#include<iostream>
+using namespace std;
+struct A {
+    typedef int x; //It is an alias. This is the same as using x=int;
+};
+
+struct B {
+    static const int x=1;
+};
+
+int x=3;
+
+template <class X> void funz(){
+    X::x * x;
+}
+
+int main(){
+   funz<A>(); //In this case X::x *x creates a pointer to int
+   funz<B>(); //In this case we multiply x in B with x in global scope
+}
+#+END_SRC
+
+#+RESULTS: ERROR: dependent-name ‘X::x’ is parsed as a non-type
+
+For this reason the compiler _needs_ to know if the dependent name is a type or not.
+The compiler will assume that it is _not a type_ by default.
+If we want to specify that _it is a type_ then we will write
+#+BEGIN_SRC C++
+template <class X> void funz(){
+   typename X::x * x;
+}
+#+END_SRC
+
+Consdier the following code
+#+BEGIN_SRC C++
+# include <iostream>
+using namespace std;
+
+template <class X> struct C1{
+
+    //Define a template class INSIDE a template class
+    template <class Y> struct C2{
+        typedef double this_is_a_type;
+    };
+
+    //Define an ordinary class nested in the template
+    struct this_is_a_type{
+        //Which contains a template function
+        template <class W> void gunz(){cout << "This is gunz!\n";}
+    };
+};
+
+//Define a template function in the global scope
+template <class Z> void funz(){
+    //Case 1
+    typename C1<Z>::this_is_a_type var;
+    //Here I need to put typename to tell the compiler that this_is_a_type must be used as the name of a type
+
+    //Case 2
+    typename C1<Z>::template C2<int>::this_is_a_type d;
+    //Here as above, but I want to use the this_is_a_type inside C2, and for this reason I need to put typename outside, to tell the compiler to treat what follows as the name of a type, but also :: template C2<...> otehrwise the bracket < after C2 would be an error!
+
+    //Same as bfore, I need to specify that gunz is a template funtion other wise the angled brackets make no sense there!
+    var.template gunz<int>();
+}
+
+int main(){
+    funz<double>();
+}
+#+END_SRC
+
+#+RESULTS:
+: This is gunz!
+
+
+Now consider this other example. In this case tehre is no need to put the word /typename/ because the compiler will know for sure that those are names of types!
+In fact, ambiguities can onlu arise _when the scope resolutor operator is used_!
+
+#+BEGIN_SRC C++ results output :exports both :flags "-std=c++11" :cmdline "-o prog" :classname main
+# include <iostream>
+using namespace std;
+
+struct C1 {
+    void gunza(){
+        cout << "In C1 gunza without template arguments!\n";
+    }
+
+    template <class Y> void gunza(){
+        Y y(22);
+        cout << "In C1 gunza with template arguments! " << y << '\n';
+    }
+};
+
+template <class X> struct C2 {
+    void gunza(){
+        cout << "In C2 gunza with no template arguments!\n";}
+    template <class Y> void gunza(){
+        Y y(33);
+        cout << "Inside C2 gunza with template arguments!" << y << '\n';}
+};
+
+template <class Z> void funza(){
+    Z var;
+    C2 <Z> vor;
+    var.gunza(  );
+    var.template gunza<int>(  );
+    vor.gunza(  );
+    vor.template gunza<int>(  );
+}
+
+int main(  ) {
+funza<C1>(  );
+funza<C2<C1>>(  );
+}
+#+END_SRC
+
+#+RESULTS:
+| In     | C1 | gunza | without | template | arguments!   |            |
+| In     | C1 | gunza | with    | template | arguments!   | 22         |
+| In     | C2 | gunza | with    | no       | template     | arguments! |
+| Inside | C2 | gunza | with    | template | arguments!33 |            |
+| In     | C2 | gunza | with    | no       | template     | arguments! |
+| Inside | C2 | gunza | with    | template | arguments!33 |            |
+| In     | C2 | gunza | with    | no       | template     | arguments! |
+| Inside | C2 | gunza | with    | template | arguments!33 |            |
+
+** A more compicated code
+See [[file:template_example.cpp][A more compilcated code]].
+***** TODO It needs to be completed.
